@@ -18,6 +18,18 @@
         .pkg-active{border-color:#2563eb!important;background:#eff6ff}
         .sidebar-lnk.active{background:#ebf4ff;color:#1a56db;border-left:3px solid #1a56db;font-weight:700}
         @media(max-width:768px){.search-hide{display:none}}
+
+        /* ===== FLASH SALE SLIDER ===== */
+        .flash-sale-wrapper{position:relative;display:flex;align-items:center;padding:10px 0}
+        .flash-sale-container{display:flex;overflow-x:auto;scroll-behavior:smooth;gap:12px;padding:8px 4px;width:100%;-ms-overflow-style:none;scrollbar-width:none}
+        .flash-sale-container::-webkit-scrollbar{display:none}
+        .flash-sale-card{min-width:180px;border:1.5px solid #ff4d4f;border-radius:12px;padding:12px;cursor:pointer;text-align:center;transition:transform 0.2s,box-shadow 0.2s;background:#fff;flex-shrink:0}
+        .flash-sale-card:hover{transform:translateY(-4px);box-shadow:0 6px 20px rgba(255,77,79,0.2)}
+        .flash-sale-card img{width:64px;height:64px;object-fit:contain;margin:0 auto 8px}
+        .flash-sale-arrow{position:absolute;top:50%;transform:translateY(-50%);background:#ff4d4f;color:white;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;z-index:10;display:none;font-size:14px;box-shadow:0 2px 8px rgba(255,77,79,0.4);transition:background 0.2s}
+        .flash-sale-arrow:hover{background:#e03e3e}
+        .arrow-left{left:-14px}
+        .arrow-right{right:-14px}
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
@@ -25,7 +37,7 @@
 <!-- ===== HEADER ===== -->
 <header class="bg-white shadow-sm sticky top-0 z-50">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3 flex-shrink-0 cursor-pointer" onclick="openTab('tai-khoan')">
+        <div class="flex items-center gap-3 flex-shrink-0 cursor-pointer" onclick="openTab('home')">
             <div class="w-9 h-9 bg-blue-700 rounded-lg flex items-center justify-center text-white font-black text-sm">TN</div>
             <div class="text-sm font-black leading-tight">TN QUANG<span class="text-blue-700 block">STORE</span></div>
         </div>
@@ -34,6 +46,7 @@
             <input type="text" placeholder="Tìm kiếm..." class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm outline-none focus:border-blue-400">
         </div>
         <nav class="flex items-center gap-1 flex-wrap">
+            <button onclick="openTab('home')" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">Trang Chủ</button>
             <button onclick="openTab('tai-khoan')" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">Tài Khoản</button>
             <button onclick="openTab('dich-vu')" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">Dịch Vụ</button>
             <button onclick="openTab('nap-game')" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">Nạp Game</button>
@@ -50,6 +63,83 @@
 </header>
 
 <div class="max-w-6xl mx-auto px-4 py-5">
+
+<!-- ===== TAB: TRANG CHỦ ===== -->
+<div id="tab-home" class="tab-content">
+
+    <!-- ADMIN: Quản lý Flash Sale -->
+    <div id="admin-flash-panel" class="hidden mb-6 bg-white rounded-xl border-2 border-red-300 overflow-hidden">
+        <div class="bg-red-500 text-white px-5 py-3 flex items-center justify-between">
+            <h3 class="font-black"><i class="fas fa-bolt mr-2"></i>Quản Lý Flash Sale (Admin)</h3>
+            <button onclick="document.getElementById('admin-flash-panel').classList.add('hidden')" class="text-white/80 hover:text-white text-lg">&times;</button>
+        </div>
+        <div class="p-5 space-y-4">
+            <!-- Thời gian kết thúc -->
+            <div>
+                <label class="text-sm font-bold text-gray-600 mb-1 block">⏰ Thời gian kết thúc Flash Sale</label>
+                <input type="datetime-local" id="fs-end-time" class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-400 w-full max-w-xs">
+            </div>
+
+            <!-- Load gói nạp để chọn -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-bold text-gray-600">📦 Chọn Gói Nạp vào Flash Sale</label>
+                    <button onclick="loadAllPackagesForAdmin()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg"><i class="fas fa-sync mr-1"></i>Tải Gói Nạp</button>
+                </div>
+                <div id="fs-pkg-list" class="max-h-72 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-gray-50 space-y-2">
+                    <p class="text-xs text-gray-400 text-center py-4">Nhấn "Tải Gói Nạp" để hiện danh sách</p>
+                </div>
+            </div>
+
+            <button onclick="saveFlashSaleConfig()" class="w-full bg-red-500 hover:bg-red-600 text-white font-black py-3 rounded-xl text-base shadow-lg shadow-red-500/30">
+                <i class="fas fa-save mr-2"></i>LƯU CẤU HÌNH FLASH SALE
+            </button>
+        </div>
+    </div>
+
+    <!-- FLASH SALE SECTION -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-lg">
+                    <i class="fas fa-bolt text-yellow-300"></i>
+                    <span class="font-black text-sm">FLASH SALE</span>
+                </div>
+                <div id="fs-countdown" class="flex gap-1">
+                    <div class="bg-gray-900 text-white px-2 py-1 rounded text-sm font-black" id="fs-h">00</div>
+                    <span class="font-black text-gray-600 self-center">:</span>
+                    <div class="bg-gray-900 text-white px-2 py-1 rounded text-sm font-black" id="fs-m">00</div>
+                    <span class="font-black text-gray-600 self-center">:</span>
+                    <div class="bg-gray-900 text-white px-2 py-1 rounded text-sm font-black" id="fs-s">00</div>
+                </div>
+            </div>
+            <button id="btn-manage-fs" onclick="document.getElementById('admin-flash-panel').classList.toggle('hidden');loadAllPackagesForAdmin()" class="hidden bg-red-100 text-red-600 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-200">
+                <i class="fas fa-cog mr-1"></i>Quản lý
+            </button>
+        </div>
+
+        <!-- SLIDER -->
+        <div class="flash-sale-wrapper">
+            <button class="flash-sale-arrow arrow-left" id="btn-slide-left"><i class="fas fa-chevron-left"></i></button>
+            <div class="flash-sale-container" id="flash-sale-list">
+                <div class="text-center text-gray-400 text-sm py-6 w-full">Đang tải Flash Sale...</div>
+            </div>
+            <button class="flash-sale-arrow arrow-right" id="btn-slide-right"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <!-- Nạp Game nhanh -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-lg font-black text-gray-800">Nạp Game</h2>
+                <p class="text-sm text-gray-500">Các game đang hot</p>
+            </div>
+            <button onclick="openTab('nap-game')" class="text-blue-600 text-sm font-semibold hover:underline">Xem tất cả →</button>
+        </div>
+        <div id="home-game-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3"></div>
+    </div>
+</div>
 
 <!-- ===== TAB: TÀI KHOẢN ===== -->
 <div id="tab-tai-khoan" class="tab-content">
@@ -85,14 +175,13 @@
     <div id="grid-dich-vu" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 </div>
 
-<!-- ===== TAB: NẠP GAME (HỆ THỐNG 3 CẤP) ===== -->
+<!-- ===== TAB: NẠP GAME 3 CẤP ===== -->
 <div id="tab-nap-game" class="tab-content">
 
-    <!-- CẤP 1: Danh sách Game -->
+    <!-- CẤP 1 -->
     <div id="ng-lv1">
-        <!-- Admin panel cấp 1 -->
         <div id="admin-ng-lv1" class="hidden mb-5 bg-white rounded-xl p-5 border-2 border-amber-300">
-            <h3 class="font-black text-amber-600 mb-4"><i class="fas fa-plus-circle mr-1"></i>Thêm Game Mới (Cấp 1)</h3>
+            <h3 class="font-black text-amber-600 mb-4"><i class="fas fa-plus-circle mr-1"></i>Thêm Game Mới</h3>
             <div class="grid grid-cols-3 gap-3">
                 <div><label class="text-xs font-semibold text-gray-500 mb-1 block">Tên Game</label>
                     <input type="text" id="lv1-game-name" placeholder="VD: Genshin Impact" class="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-amber-400"></div>
@@ -112,16 +201,15 @@
         </div>
     </div>
 
-    <!-- CẤP 2: Hình thức nạp -->
+    <!-- CẤP 2 -->
     <div id="ng-lv2" class="hidden">
         <div class="flex items-center gap-3 mb-5">
             <button onclick="ngBack(1)" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"><i class="fas fa-chevron-left"></i> Danh sách game</button>
             <span class="text-gray-300">/</span>
             <span id="lv2-breadcrumb" class="text-sm font-bold text-gray-700"></span>
         </div>
-        <!-- Admin panel cấp 2 -->
         <div id="admin-ng-lv2" class="hidden mb-5 bg-white rounded-xl p-5 border-2 border-blue-300">
-            <h3 class="font-black text-blue-700 mb-4"><i class="fas fa-plus-circle mr-1"></i>Thêm Hình Thức Nạp (Cấp 2)</h3>
+            <h3 class="font-black text-blue-700 mb-4"><i class="fas fa-plus-circle mr-1"></i>Thêm Hình Thức Nạp</h3>
             <div class="grid grid-cols-4 gap-3">
                 <div><label class="text-xs font-semibold text-gray-500 mb-1 block">Tên Hình Thức</label>
                     <input type="text" id="lv2-name" placeholder="VD: Genshin Impact" class="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-400"></div>
@@ -138,16 +226,13 @@
             </div>
         </div>
         <div class="flex items-center justify-between mb-4">
-            <div>
-                <h2 class="text-xl font-black text-gray-800">Chọn Hình Thức Nạp</h2>
-                <p class="text-sm text-gray-500">Chọn loại nạp phù hợp với bạn</p>
-            </div>
+            <div><h2 class="text-xl font-black text-gray-800">Chọn Hình Thức Nạp</h2><p class="text-sm text-gray-500">Chọn loại nạp phù hợp</p></div>
             <button id="btn-ng-lv2-admin" onclick="document.getElementById('admin-ng-lv2').classList.toggle('hidden')" class="hidden bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">➕ Thêm HT Nạp</button>
         </div>
         <div id="naptype-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
     </div>
 
-    <!-- CẤP 3: Trang chi tiết nạp (layout 70/30) -->
+    <!-- CẤP 3 -->
     <div id="ng-lv3" class="hidden">
         <div class="flex items-center gap-3 mb-5 flex-wrap">
             <button onclick="ngBack(1)" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"><i class="fas fa-chevron-left"></i> Game</button>
@@ -158,10 +243,9 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-10 gap-6 items-start">
-            <!-- CỘT TRÁI 70% -->
             <div class="lg:col-span-7 space-y-5">
 
-                <!-- Admin: Thêm gói nạp + mô tả -->
+                <!-- Admin: Thêm gói + mô tả -->
                 <div id="admin-ng-lv3" class="hidden bg-amber-50 border-2 border-amber-300 rounded-xl p-5 space-y-4">
                     <div>
                         <h4 class="font-black text-amber-700 mb-3"><i class="fas fa-plus-circle mr-1"></i>Thêm Gói Nạp Mới</h4>
@@ -174,19 +258,18 @@
                     </div>
                     <hr class="border-amber-200">
                     <div>
-                        <h4 class="font-black text-amber-700 mb-3"><i class="fas fa-edit mr-1"></i>Cập Nhật Mô Tả Dịch Vụ</h4>
+                        <h4 class="font-black text-amber-700 mb-3"><i class="fas fa-edit mr-1"></i>Cập Nhật Mô Tả</h4>
                         <textarea id="lv3-desc-input" rows="4" placeholder="Nhập mô tả dịch vụ..." class="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none resize-none focus:border-amber-400"></textarea>
                         <button onclick="saveDescription()" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-sm"><i class="fas fa-save mr-1"></i>Lưu Mô Tả</button>
                     </div>
-                    <!-- Xóa gói -->
                     <div>
                         <h4 class="font-black text-amber-700 mb-2"><i class="fas fa-trash mr-1"></i>Xóa Gói Nạp</h4>
                         <div id="admin-pkg-delete-list" class="space-y-2"></div>
                     </div>
                 </div>
 
-                <!-- Chọn gói nạp -->
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                <!-- Gói nạp -->
+                <div id="pkg-section" class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
                     <div class="border-l-4 border-blue-600 pl-3 mb-4 flex items-center justify-between">
                         <h3 class="font-bold text-lg">Chọn gói nạp</h3>
                         <button id="btn-ng-lv3-admin" onclick="document.getElementById('admin-ng-lv3').classList.toggle('hidden');loadAdminDeleteList()" class="hidden bg-amber-100 text-amber-700 px-3 py-1 rounded-lg text-xs font-bold hover:bg-amber-200">🛠️ Quản lý</button>
@@ -199,50 +282,42 @@
                 <!-- Form thông tin -->
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
                     <div class="border-l-4 border-blue-600 pl-3 mb-4"><h3 class="font-bold text-lg">Thông tin tài khoản</h3></div>
-                    <!-- Form UID (mặc định) -->
                     <div id="form-uid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div><label class="block text-sm font-bold text-gray-700 mb-1">UID <span class="text-red-500">*</span></label>
                             <input type="text" id="inp-uid" placeholder="Nhập UID nhân vật" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none"></div>
                         <div><label class="block text-sm font-bold text-gray-700 mb-1">Máy chủ <span class="text-red-500">*</span></label>
                             <select id="inp-server" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none">
-                                <option>ASIA</option><option>AMERICA</option><option>EUROPE</option><option>TW/HK/MO</option>
-                            </select></div>
+                                <option>ASIA</option><option>AMERICA</option><option>EUROPE</option><option>TW/HK/MO</option></select></div>
                     </div>
-                    <!-- Form LOG (ẩn mặc định) -->
                     <div id="form-log" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div><label class="block text-sm font-bold text-gray-700 mb-1">UID <span class="text-red-500">*</span></label>
                             <input type="text" id="inp-uid-log" placeholder="Nhập UID nhân vật" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none"></div>
                         <div><label class="block text-sm font-bold text-gray-700 mb-1">Máy chủ <span class="text-red-500">*</span></label>
                             <select id="inp-server-log" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none">
-                                <option>ASIA</option><option>AMERICA</option><option>EUROPE</option><option>TW/HK/MO</option>
-                            </select></div>
+                                <option>ASIA</option><option>AMERICA</option><option>EUROPE</option><option>TW/HK/MO</option></select></div>
                         <div><label class="block text-sm font-bold text-gray-700 mb-1">Tài khoản <span class="text-red-500">*</span></label>
                             <input type="text" id="inp-acc" placeholder="Email / Tên đăng nhập" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none"></div>
                         <div><label class="block text-sm font-bold text-gray-700 mb-1">Mật khẩu <span class="text-red-500">*</span></label>
                             <input type="password" id="inp-pass" placeholder="Mật khẩu" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none"></div>
                         <div class="md:col-span-2"><label class="block text-sm font-bold text-gray-700 mb-1">Thông tin liên hệ (Zalo/FB) <span class="text-red-500">*</span></label>
-                            <input type="text" id="inp-contact" placeholder="Nhập Zalo hoặc FB để liên hệ" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none"></div>
+                            <input type="text" id="inp-contact" placeholder="Nhập Zalo hoặc FB" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none"></div>
                     </div>
                 </div>
 
-                <!-- Mô tả dịch vụ -->
+                <!-- Mô tả -->
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
                     <div class="border-l-4 border-blue-600 pl-3 mb-3"><h3 class="font-bold text-lg">Mô tả dịch vụ</h3></div>
                     <div id="lv3-desc-display" class="text-sm text-gray-600 whitespace-pre-line">Chưa có mô tả.</div>
                 </div>
             </div>
 
-            <!-- CỘT PHẢI 30% - Sticky -->
+            <!-- STICKY SIDEBAR -->
             <div class="lg:col-span-3 sticky-cart">
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-4">
                     <div class="border-l-4 border-blue-600 pl-3"><h3 class="font-bold text-lg">Thanh toán</h3></div>
-
-                    <!-- Gói đã chọn -->
                     <div id="cart-pkg-box" class="bg-gray-50 border border-gray-200 rounded-lg p-3">
                         <p class="text-xs text-gray-400 text-center py-2">Chưa chọn gói nào</p>
                     </div>
-
-                    <!-- Số lượng -->
                     <div class="flex justify-between items-center">
                         <span class="text-sm font-semibold text-gray-600">Số lượng:</span>
                         <div class="flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden">
@@ -251,21 +326,16 @@
                             <button onclick="changeQty(1)" class="px-3 py-1.5 hover:bg-gray-100 text-gray-600 font-bold text-lg leading-none">+</button>
                         </div>
                     </div>
-
-                    <!-- Tổng tiền -->
                     <div class="flex justify-between items-center bg-blue-50 p-3 rounded-lg border border-blue-100">
                         <span class="font-bold text-gray-700">Tổng tiền:</span>
                         <span id="cart-total" class="text-lg font-black text-blue-700">0đ</span>
                     </div>
-
-                    <!-- Nút thanh toán -->
                     <button onclick="processPayment()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/30 transition text-base">
                         <i class="fas fa-shopping-cart mr-2"></i>Thanh Toán
                     </button>
-
                     <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
                         <p class="font-bold mb-1"><i class="fas fa-circle-info mr-1"></i>Lưu ý:</p>
-                        <p>Đơn sẽ bay vào hộp thư Admin để xử lý thủ công. Điền đúng thông tin để tránh lỗi đơn.</p>
+                        <p>Đơn sẽ bay vào hộp thư Admin để xử lý thủ công.</p>
                     </div>
                 </div>
             </div>
@@ -292,7 +362,7 @@
             <div class="mb-3 space-y-2"><label class="text-sm font-semibold text-gray-600 block">Chất lượng <span class="text-red-500">*</span></label>
                 <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-400"><input type="radio" name="buff-q" value="Buff dễ mất" checked class="accent-blue-600"><div><div class="text-sm font-semibold">🟢 Buff dễ mất</div><div class="text-xs text-gray-400">Giá rẻ, tốc độ nhanh</div></div></label>
                 <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-400"><input type="radio" name="buff-q" value="Buff khó rớt" class="accent-blue-600"><div><div class="text-sm font-semibold">🔵 Buff khó rớt</div><div class="text-xs text-gray-400">Chất lượng cao</div></div></label>
-                <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-400"><input type="radio" name="buff-q" value="Buff hạn chế rớt hết mức có thể" class="accent-blue-600"><div><div class="text-sm font-semibold">🟣 Buff hạn chế rớt hết mức có thể</div><div class="text-xs text-gray-400">Cao cấp nhất</div></div></label>
+                <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-400"><input type="radio" name="buff-q" value="Buff hạn chế rớt hết mức có thể" class="accent-blue-600"><div><div class="text-sm font-semibold">🟣 Buff hạn chế rớt hết mức có thể</div></div></label>
             </div>
             <div class="mb-3"><label class="text-sm font-semibold text-gray-600 mb-1 block">Link <span class="text-red-500">*</span></label>
                 <input type="text" id="buff-link" placeholder="https://..." class="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-400"></div>
@@ -314,12 +384,11 @@
             <i class="fas fa-inbox text-xl"></i>
             <div><h2 class="text-lg font-black">Hộp Thư Admin</h2><p class="text-red-200 text-sm">Quản lý tất cả đơn hàng chờ xử lý</p></div>
         </div>
-        <!-- 4 tab -->
         <div class="flex border-b border-gray-200 bg-gray-50">
-            <button onclick="switchInboxTab('nap-game')" id="itab-nap-game" class="inbox-tab-btn active-itab flex-1 px-4 py-3 text-sm font-semibold border-b-2 border-blue-600 text-blue-700 transition"><i class="fas fa-gamepad mr-1"></i>Nạp Game</button>
-            <button onclick="switchInboxTab('tai-khoan')" id="itab-tai-khoan" class="inbox-tab-btn flex-1 px-4 py-3 text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700 transition"><i class="fas fa-user mr-1"></i>Tài Khoản</button>
-            <button onclick="switchInboxTab('dich-vu')" id="itab-dich-vu" class="inbox-tab-btn flex-1 px-4 py-3 text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700 transition"><i class="fas fa-cogs mr-1"></i>Dịch Vụ</button>
-            <button onclick="switchInboxTab('buff-mxh')" id="itab-buff-mxh" class="inbox-tab-btn flex-1 px-4 py-3 text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700 transition"><i class="fas fa-chart-line mr-1"></i>Buff MXH</button>
+            <button onclick="switchInboxTab('nap-game')" id="itab-nap-game" class="inbox-tab-btn flex-1 px-4 py-3 text-sm font-semibold border-b-2 border-blue-600 text-blue-700"><i class="fas fa-gamepad mr-1"></i>Nạp Game</button>
+            <button onclick="switchInboxTab('tai-khoan')" id="itab-tai-khoan" class="inbox-tab-btn flex-1 px-4 py-3 text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700"><i class="fas fa-user mr-1"></i>Tài Khoản</button>
+            <button onclick="switchInboxTab('dich-vu')" id="itab-dich-vu" class="inbox-tab-btn flex-1 px-4 py-3 text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700"><i class="fas fa-cogs mr-1"></i>Dịch Vụ</button>
+            <button onclick="switchInboxTab('buff-mxh')" id="itab-buff-mxh" class="inbox-tab-btn flex-1 px-4 py-3 text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700"><i class="fas fa-chart-line mr-1"></i>Buff MXH</button>
         </div>
         <div class="p-5">
             <div id="inbox-nap-game" class="inbox-panel space-y-3"></div>
@@ -339,12 +408,12 @@
                 <div class="flex items-center gap-2 text-gray-500 text-sm"><i class="fas fa-user"></i><span id="sb-name">User</span></div>
             </div>
             <div class="text-xs text-gray-400 font-bold px-4 pt-3 pb-1 uppercase">Người dùng</div>
-            <div class="sidebar-lnk active px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2" onclick="showSubPage('profile')"><i class="fas fa-user-circle w-4 text-center"></i> Thông tin cá nhân</div>
-            <div class="sidebar-lnk px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2 text-gray-600" onclick="showSubPage('lich-su')"><i class="fas fa-history w-4 text-center"></i> Lịch sử mua hàng</div>
-            <div class="sidebar-lnk px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2 text-gray-600" onclick="showSubPage('bien-dong')"><i class="fas fa-chart-line w-4 text-center"></i> Biến động số dư</div>
+            <div class="sidebar-lnk active px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2" onclick="showSub('profile')"><i class="fas fa-user-circle w-4 text-center"></i> Thông tin cá nhân</div>
+            <div class="sidebar-lnk px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2 text-gray-600" onclick="showSub('lich-su')"><i class="fas fa-history w-4 text-center"></i> Lịch sử mua hàng</div>
+            <div class="sidebar-lnk px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2 text-gray-600" onclick="showSub('bien-dong')"><i class="fas fa-chart-line w-4 text-center"></i> Biến động số dư</div>
             <div class="text-xs text-gray-400 font-bold px-4 pt-3 pb-1 uppercase">Nạp tiền</div>
-            <div class="sidebar-lnk px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2 text-gray-600" onclick="showSubPage('nap-the')"><i class="fas fa-credit-card w-4 text-center"></i> Thẻ cào</div>
-            <div class="sidebar-lnk px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2 text-gray-600 mb-2" onclick="showSubPage('ngan-hang')"><i class="fas fa-university w-4 text-center"></i> Ngân hàng</div>
+            <div class="sidebar-lnk px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2 text-gray-600" onclick="showSub('nap-the')"><i class="fas fa-credit-card w-4 text-center"></i> Thẻ cào</div>
+            <div class="sidebar-lnk px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2 text-gray-600 mb-2" onclick="showSub('ngan-hang')"><i class="fas fa-university w-4 text-center"></i> Ngân hàng</div>
         </div>
         <div class="md:col-span-3 bg-white rounded-xl shadow-sm p-6">
             <div id="sub-profile" class="sub-page active">
@@ -401,7 +470,7 @@
             <div id="sub-ngan-hang" class="sub-page">
                 <h3 class="text-xl font-black text-gray-800 mb-1">Nạp Tiền Ngân Hàng</h3>
                 <div class="w-10 h-1 bg-blue-700 rounded mb-5"></div>
-                <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4 text-sm text-orange-800"><div class="font-bold mb-2">📋 Hướng dẫn nạp tiền</div><ul class="list-disc pl-4 space-y-1"><li>Chuyển khoản đúng số TK và nội dung bên dưới</li><li>Hệ thống tự cộng tiền sau ~1 phút</li><li>Sau 10p chưa cộng → liên hệ Admin</li></ul></div>
+                <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4 text-sm text-orange-800"><div class="font-bold mb-2">📋 Hướng dẫn</div><ul class="list-disc pl-4 space-y-1"><li>Chuyển khoản đúng STK và nội dung bên dưới</li><li>Hệ thống tự cộng ~1 phút</li><li>Sau 10p chưa cộng → liên hệ Admin</li></ul></div>
                 <div class="border border-gray-200 rounded-xl p-5">
                     <div class="text-xl font-black text-blue-700 mb-3">ACB</div>
                     <div class="flex justify-between py-3 border-b border-gray-100"><span class="text-sm text-gray-500">Số tài khoản</span><div class="flex items-center gap-2"><span class="font-bold">16535551</span><button onclick="cpText('16535551')" class="text-blue-600 text-xs"><i class="fas fa-copy"></i></button></div></div>
@@ -413,7 +482,7 @@
     </div>
 </div>
 
-</div><!-- end container -->
+</div>
 
 <!-- FOOTER -->
 <footer class="bg-gray-900 text-gray-400 mt-10 py-8 px-4">
@@ -426,7 +495,7 @@
         <div class="text-right">
             <h4 class="text-white font-bold mb-2">Liên kết</h4>
             <div class="space-y-1 text-sm">
-                <div><a onclick="openTab('tai-khoan')" class="hover:text-white cursor-pointer">Tài Khoản</a></div>
+                <div><a onclick="openTab('home')" class="hover:text-white cursor-pointer">Trang Chủ</a></div>
                 <div><a onclick="openTab('buff-mxh')" class="hover:text-white cursor-pointer">Buff MXH</a></div>
                 <div><a onclick="openTab('nap-game')" class="hover:text-white cursor-pointer">Nạp Game</a></div>
             </div>
@@ -457,13 +526,13 @@
     </div>
 </div>
 
-<!-- MODAL ĐẶT HÀNG THÀNH CÔNG -->
+<!-- MODAL ĐẶT HÀNG OK -->
 <div id="orderOkModal" class="modal-overlay">
     <div class="bg-white rounded-2xl p-7 w-full max-w-sm shadow-2xl relative text-center">
         <button onclick="closeModal('orderOkModal')" class="absolute right-4 top-4 text-gray-400 text-xl">&times;</button>
         <i class="fas fa-check-circle text-green-500 text-5xl mb-3"></i>
         <h3 class="text-xl font-black text-gray-800 mb-2">Đặt Hàng Thành Công!</h3>
-        <p class="text-sm text-gray-500 mb-4">Đơn hàng đã bay vào hộp thư Admin để xử lý. Vui lòng chờ.</p>
+        <p class="text-sm text-gray-500 mb-4">Đơn đã bay vào hộp thư Admin để xử lý.</p>
         <div id="order-ok-detail" class="bg-gray-50 rounded-xl p-4 text-left text-sm space-y-2 mb-4"></div>
         <button onclick="closeModal('orderOkModal')" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-bold hover:bg-blue-800">Đóng</button>
     </div>
@@ -471,26 +540,18 @@
 
 <script>
 // ===== FIREBASE =====
-const firebaseConfig = {
-    apiKey:"AIzaSyBfFejnht7HCJqjw95JFCpOMPR1HB3GSGU",
-    authDomain:"tnquangstore.firebaseapp.com",
-    projectId:"tnquangstore",
-    storageBucket:"tnquangstore.firebasestorage.app",
-    messagingSenderId:"683180615667",
-    appId:"1:683180615667:web:8baece012df95a0bb35486"
-};
+const firebaseConfig={apiKey:"AIzaSyBfFejnht7HCJqjw95JFCpOMPR1HB3GSGU",authDomain:"tnquangstore.firebaseapp.com",projectId:"tnquangstore",storageBucket:"tnquangstore.firebasestorage.app",messagingSenderId:"683180615667",appId:"1:683180615667:web:8baece012df95a0bb35486"};
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const TS = firebase.firestore.FieldValue.serverTimestamp;
-const ADMIN = "tnquang477@gmail.com";
+const auth=firebase.auth();
+const db=firebase.firestore();
+const TS=firebase.firestore.FieldValue.serverTimestamp;
+const ADMIN="tnquang477@gmail.com";
 
-let isAdmin=false, curUser=null;
-let selCarrierVal='Garena', selDenomVal=0, selPlatformVal='facebook';
-
-// Nạp game state
-let ngGameId=null, ngGameName='', ngTypeId=null, ngTypeName='', ngTypeMode='uid';
+let isAdmin=false,curUser=null;
+let selCarrierVal='Garena',selDenomVal=0,selPlatformVal='facebook';
+let ngGameId=null,ngGameName='',ngTypeId=null,ngTypeName='',ngTypeMode='uid';
 let ngSelPkg=null;
+let fsCountdownInterval=null;
 
 // ===== MODAL =====
 const openModal=id=>document.getElementById(id).classList.add('open');
@@ -499,8 +560,9 @@ const closeModal=id=>document.getElementById(id).classList.remove('open');
 // ===== TABS =====
 function openTab(id){
     document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
-    const map={'tai-khoan':'tab-tai-khoan','dich-vu':'tab-dich-vu','nap-game':'tab-nap-game','buff-mxh':'tab-buff-mxh','admin-inbox':'tab-admin-inbox','account':'tab-account'};
-    document.getElementById(map[id]||'tab-tai-khoan')?.classList.add('active');
+    const map={'home':'tab-home','tai-khoan':'tab-tai-khoan','dich-vu':'tab-dich-vu','nap-game':'tab-nap-game','buff-mxh':'tab-buff-mxh','admin-inbox':'tab-admin-inbox','account':'tab-account'};
+    document.getElementById(map[id]||'tab-home')?.classList.add('active');
+    if(id==='home'){loadFlashSale();loadHomeGameGrid();}
     if(id==='tai-khoan') loadProducts('tai-khoan');
     if(id==='dich-vu') loadProducts('dich-vu');
     if(id==='nap-game') loadGameGrid();
@@ -508,7 +570,7 @@ function openTab(id){
     if(id==='admin-inbox'){if(!isAdmin){alert('Không có quyền!');return;}switchInboxTab('nap-game');}
     window.scrollTo(0,0);
 }
-openTab('tai-khoan');
+openTab('home');
 
 // ===== AUTH =====
 auth.onAuthStateChanged(u=>{
@@ -520,21 +582,17 @@ auth.onAuthStateChanged(u=>{
             document.getElementById('admin-inbox-btn')?.classList.remove('hidden');
             document.getElementById('btn-tk-form')?.classList.remove('hidden');
             document.getElementById('btn-ng-admin')?.classList.remove('hidden');
+            document.getElementById('btn-manage-fs')?.classList.remove('hidden');
         }
         db.collection("users").doc(u.email).onSnapshot(doc=>{
             const d=doc.data()||{vnd:0};
             const ten=u.email.split('@')[0];
             const bal=d.vnd.toLocaleString();
-            const sbB=document.getElementById('sb-balance');
-            const sbN=document.getElementById('sb-name');
-            if(sbB) sbB.innerText=bal+'đ';
-            if(sbN) sbN.innerText=ten;
-            const pU=document.getElementById('profile-uname');
-            const pE=document.getElementById('profile-email');
-            if(pU) pU.innerText=ten;
-            if(pE) pE.innerText=u.email;
-            const ndCk=document.getElementById('nd-ck');
-            if(ndCk) ndCk.innerText='TNQ'+ten.toUpperCase().substring(0,6);
+            ['sb-balance'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerText=bal+'đ';});
+            ['sb-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerText=ten;});
+            const pU=document.getElementById('profile-uname');const pE=document.getElementById('profile-email');
+            if(pU)pU.innerText=ten;if(pE)pE.innerText=u.email;
+            const ndCk=document.getElementById('nd-ck');if(ndCk)ndCk.innerText='TNQ'+ten.toUpperCase().substring(0,6);
             area.innerHTML=`
                 <div class="relative" id="umw">
                     <button onclick="toggleUM()" class="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 bg-gray-50 hover:bg-gray-100">
@@ -543,13 +601,10 @@ auth.onAuthStateChanged(u=>{
                         <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
                     </button>
                     <div id="udrop" class="hidden absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 w-52 z-50 overflow-hidden">
-                        <div class="px-4 py-3 border-b border-gray-100 bg-gray-50">
-                            <div class="font-bold text-sm text-gray-800">${ten}</div>
-                            <div class="text-green-600 font-bold text-sm">${bal} VNĐ</div>
-                        </div>
+                        <div class="px-4 py-3 border-b border-gray-100 bg-gray-50"><div class="font-bold text-sm text-gray-800">${ten}</div><div class="text-green-600 font-bold text-sm">${bal} VNĐ</div></div>
                         <a onclick="openTab('account');showSub('profile')" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer border-b border-gray-50"><i class="fas fa-user-circle w-4 text-center text-gray-400"></i> Trang cá nhân</a>
-                        <a onclick="openTab('account');showSub('lich-su')" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer border-b border-gray-50"><i class="fas fa-history w-4 text-center text-gray-400"></i> Lịch sử mua hàng</a>
-                        <a onclick="openTab('account');showSub('nap-the')" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer border-b border-gray-50"><i class="fas fa-credit-card w-4 text-center text-red-400"></i> Nạp thẻ cào</a>
+                        <a onclick="openTab('account');showSub('lich-su')" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer border-b border-gray-50"><i class="fas fa-history w-4 text-center text-gray-400"></i> Lịch sử</a>
+                        <a onclick="openTab('account');showSub('nap-the')" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer border-b border-gray-50"><i class="fas fa-credit-card w-4 text-center text-red-400"></i> Nạp thẻ</a>
                         ${isAdmin?`<a onclick="openTab('admin-inbox')" class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 cursor-pointer border-b border-gray-50"><i class="fas fa-inbox w-4 text-center"></i> Hộp Thư Admin</a>`:''}
                         <a onclick="auth.signOut()" class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 cursor-pointer"><i class="fas fa-sign-out-alt w-4 text-center"></i> Đăng xuất</a>
                     </div>
@@ -560,13 +615,15 @@ auth.onAuthStateChanged(u=>{
         isAdmin=false;
         area.innerHTML=`<button onclick="openModal('loginModal')" class="bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-800">Đăng nhập</button>`;
     }
+    loadFlashSale();
+    loadHomeGameGrid();
     loadProducts('tai-khoan');
     loadProducts('dich-vu');
     loadGameGrid();
+    checkURLParams();
 });
 function toggleUM(){document.getElementById('udrop')?.classList.toggle('hidden');}
 document.addEventListener('click',()=>document.getElementById('udrop')?.classList.add('hidden'));
-
 async function doLogin(){
     const e=document.getElementById('login-email').value;
     const p=document.getElementById('login-pass').value;
@@ -581,17 +638,236 @@ function showSub(n){
     document.querySelectorAll('.sub-page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.sidebar-lnk').forEach(l=>l.classList.remove('active'));
     document.getElementById('sub-'+n)?.classList.add('active');
-    document.querySelectorAll('.sidebar-lnk').forEach(l=>{if(l.getAttribute('onclick')?.includes(n)) l.classList.add('active');});
-    if(n==='lich-su') loadLichSu();
-    if(n==='bien-dong') loadBienDong();
+    document.querySelectorAll('.sidebar-lnk').forEach(l=>{if(l.getAttribute('onclick')?.includes(n))l.classList.add('active');});
+    if(n==='lich-su')loadLichSu();if(n==='bien-dong')loadBienDong();
 }
-const showSubPage=showSub;
 
+// ===== CHECK URL PARAMS (Flash Sale → Trang chi tiết) =====
+function checkURLParams(){
+    const params=new URLSearchParams(window.location.search);
+    const gameId=params.get('gameId');
+    const typeId=params.get('typeId');
+    const mode=params.get('mode');
+    if(gameId&&typeId&&mode){
+        // Lấy tên game và type từ Firestore rồi navigate
+        db.collection("Games").doc(gameId).get().then(gDoc=>{
+            if(!gDoc.exists) return;
+            const gData=gDoc.data();
+            db.collection("Games").doc(gameId).collection("NapTypes").doc(typeId).get().then(tDoc=>{
+                if(!tDoc.exists) return;
+                const tData=tDoc.data();
+                // Mở tab nạp game và đi thẳng vào cấp 3
+                openTab('nap-game');
+                setTimeout(()=>{
+                    ngGameId=gameId; ngGameName=gData.ten;
+                    ngTypeId=typeId; ngTypeName=tData.ten; ngTypeMode=mode;
+                    // Hiển thị cấp 3
+                    document.getElementById('ng-lv1').classList.add('hidden');
+                    document.getElementById('ng-lv2').classList.add('hidden');
+                    document.getElementById('ng-lv3').classList.remove('hidden');
+                    document.getElementById('lv3-bc-game').innerText=gData.ten;
+                    document.getElementById('lv3-breadcrumb').innerText=tData.ten;
+                    // Chuyển form theo mode
+                    if(mode==='uid'){document.getElementById('form-uid').classList.remove('hidden');document.getElementById('form-log').classList.add('hidden');}
+                    else{document.getElementById('form-uid').classList.add('hidden');document.getElementById('form-log').classList.remove('hidden');}
+                    if(isAdmin){document.getElementById('btn-ng-lv3-admin')?.classList.remove('hidden');loadAdminDeleteList();}
+                    loadPackageGrid();loadDescription();resetCart();
+                    // Cuộn xuống khu vực gói nạp
+                    setTimeout(()=>{
+                        document.getElementById('pkg-section')?.scrollIntoView({behavior:'smooth',block:'start'});
+                    },500);
+                    // Xóa params khỏi URL
+                    window.history.replaceState({},'',window.location.pathname);
+                },300);
+            });
+        });
+    }
+}
+
+// ===========================
+// ===== FLASH SALE =====
+// ===========================
+
+// --- Slider logic ---
+const fsContainer=document.getElementById('flash-sale-list');
+const btnLeft=document.getElementById('btn-slide-left');
+const btnRight=document.getElementById('btn-slide-right');
+
+function checkArrowsVisibility(){
+    if(!fsContainer) return;
+    if(fsContainer.scrollWidth>fsContainer.clientWidth+10){
+        btnLeft.style.display='flex';btnLeft.style.alignItems='center';btnLeft.style.justifyContent='center';
+        btnRight.style.display='flex';btnRight.style.alignItems='center';btnRight.style.justifyContent='center';
+    } else {
+        btnLeft.style.display='none';btnRight.style.display='none';
+    }
+}
+btnLeft?.addEventListener('click',()=>{fsContainer.scrollLeft-=200;});
+btnRight?.addEventListener('click',()=>{fsContainer.scrollLeft+=200;});
+window.addEventListener('resize',checkArrowsVisibility);
+
+// --- Navigate từ Flash Sale card ---
+function goToGameDetail(gameId,typeId,isLog){
+    const mode=isLog?'log':'uid';
+    const url=`?gameId=${gameId}&typeId=${typeId}&mode=${mode}`;
+    window.history.pushState({},'',url);
+    checkURLParams();
+}
+
+// --- Load Flash Sale ---
+async function loadFlashSale(){
+    const list=document.getElementById('flash-sale-list');
+    if(!list) return;
+    try{
+        const snap=await db.collection("settings").doc("flash_sale_config").get();
+        if(!snap.exists){list.innerHTML='<div class="text-center text-gray-400 text-sm py-6 w-full">Chưa có Flash Sale</div>';checkArrowsVisibility();return;}
+        const data=snap.data();
+        // Khởi động countdown
+        if(data.endTime) startCountdown(new Date(data.endTime).getTime());
+        const items=data.items||[];
+        if(!items.length){list.innerHTML='<div class="text-center text-gray-400 text-sm py-6 w-full">Chưa có sản phẩm Flash Sale</div>';checkArrowsVisibility();return;}
+        list.innerHTML='';
+        items.forEach(item=>{
+            const isLog=item.isLog||false;
+            const modeBadge=isLog?'<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-semibold">LOGIN</span>':'<span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-semibold">Nạp UID</span>';
+            list.innerHTML+=`
+                <div class="flash-sale-card" onclick="goToGameDetail('${item.gameId}','${item.typeId}',${isLog})">
+                    <img src="${item.image||'https://via.placeholder.com/64'}" onerror="this.src='https://via.placeholder.com/64'">
+                    <p class="text-xs font-black text-gray-800 mb-1 line-clamp-2">${item.name}</p>
+                    <div class="mb-1">${modeBadge}</div>
+                    <p class="text-sm font-black text-red-500">${Number(item.price||0).toLocaleString()}đ</p>
+                    <p class="text-xs text-gray-400 mt-1">${item.gameName||''}</p>
+                </div>`;
+        });
+        setTimeout(checkArrowsVisibility,200);
+    }catch(e){list.innerHTML='<div class="text-center text-gray-400 text-sm py-6 w-full">Lỗi tải Flash Sale</div>';}
+}
+
+// --- Countdown ---
+function startCountdown(endTimestamp){
+    if(fsCountdownInterval) clearInterval(fsCountdownInterval);
+    const tick=()=>{
+        const now=Date.now();
+        const diff=endTimestamp-now;
+        if(diff<=0){
+            document.getElementById('fs-h').innerText='00';
+            document.getElementById('fs-m').innerText='00';
+            document.getElementById('fs-s').innerText='00';
+            clearInterval(fsCountdownInterval);return;
+        }
+        const h=Math.floor(diff/3600000);
+        const m=Math.floor((diff%3600000)/60000);
+        const s=Math.floor((diff%60000)/1000);
+        document.getElementById('fs-h').innerText=String(h).padStart(2,'0');
+        document.getElementById('fs-m').innerText=String(m).padStart(2,'0');
+        document.getElementById('fs-s').innerText=String(s).padStart(2,'0');
+    };
+    tick();
+    fsCountdownInterval=setInterval(tick,1000);
+}
+
+// --- Load tất cả gói nạp để Admin chọn ---
+async function loadAllPackagesForAdmin(){
+    const c=document.getElementById('fs-pkg-list');
+    c.innerHTML='<div class="text-center text-gray-400 text-sm py-4">Đang quét tất cả gói nạp...</div>';
+    try{
+        const gamesSnap=await db.collection("Games").orderBy("ngay","asc").get();
+        if(gamesSnap.empty){c.innerHTML='<div class="text-center text-gray-400 text-sm py-4">Chưa có game nào</div>';return;}
+        c.innerHTML='';
+        for(const gDoc of gamesSnap.docs){
+            const gData=gDoc.data();
+            const typesSnap=await db.collection("Games").doc(gDoc.id).collection("NapTypes").orderBy("ngay","asc").get();
+            for(const tDoc of typesSnap.docs){
+                const tData=tDoc.data();
+                const isLog=tData.mode==='log';
+                const pkgsSnap=await db.collection("Games").doc(gDoc.id).collection("NapTypes").doc(tDoc.id).collection("Packages").orderBy("ngay","asc").get();
+                if(pkgsSnap.empty) continue;
+                // Header nhóm
+                c.innerHTML+=`<div class="text-xs font-black text-gray-500 uppercase mt-3 mb-1 px-1">${gData.ten} → ${tData.ten}</div>`;
+                pkgsSnap.forEach(pDoc=>{
+                    const pData=pDoc.data();
+                    const uniqueId=`fs-cb-${gDoc.id}-${tDoc.id}-${pDoc.id}`;
+                    c.innerHTML+=`
+                        <label for="${uniqueId}" class="flex items-center gap-3 p-2.5 border border-gray-200 rounded-lg cursor-pointer hover:border-red-400 hover:bg-red-50 transition bg-white">
+                            <input type="checkbox" id="${uniqueId}"
+                                class="accent-red-500 w-4 h-4"
+                                data-gameid="${gDoc.id}"
+                                data-gamename="${gData.ten.replace(/"/g,'&quot;')}"
+                                data-typeid="${tDoc.id}"
+                                data-typename="${tData.ten.replace(/"/g,'&quot;')}"
+                                data-pkgid="${pDoc.id}"
+                                data-name="${pData.ten.replace(/"/g,'&quot;')}"
+                                data-price="${pData.gia||0}"
+                                data-image="${pData.anh||''}"
+                                data-islog="${isLog}">
+                            <img src="${pData.anh||'https://via.placeholder.com/32'}" class="w-8 h-8 object-contain rounded" onerror="this.src='https://via.placeholder.com/32'">
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold text-gray-700 truncate">${pData.ten}</div>
+                                <div class="text-xs text-red-500 font-bold">${Number(pData.gia||0).toLocaleString()}đ</div>
+                            </div>
+                            <span class="text-xs ${isLog?'text-blue-600 bg-blue-50':'text-green-600 bg-green-50'} px-2 py-0.5 rounded-full font-semibold flex-shrink-0">${isLog?'LOGIN':'UID'}</span>
+                        </label>`;
+                });
+            }
+        }
+    }catch(e){c.innerHTML=`<div class="text-center text-gray-400 text-sm py-4">Lỗi tải dữ liệu: ${e.message}</div>`;}
+}
+
+// --- Lưu Flash Sale ---
+async function saveFlashSaleConfig(){
+    const endTimeInput=document.getElementById('fs-end-time').value;
+    if(!endTimeInput) return alert("Chọn thời gian kết thúc Flash Sale!");
+    const endTime=new Date(endTimeInput).toISOString();
+    // Thu thập checkbox đã chọn
+    const checked=document.querySelectorAll('#fs-pkg-list input[type="checkbox"]:checked');
+    if(!checked.length) return alert("Chọn ít nhất 1 gói nạp!");
+    const selectedPackagesArray=[];
+    checked.forEach(cb=>{
+        selectedPackagesArray.push({
+            gameId:cb.dataset.gameid,
+            gameName:cb.dataset.gamename,
+            typeId:cb.dataset.typeid,
+            typeName:cb.dataset.typename,
+            packageId:cb.dataset.pkgid,
+            name:cb.dataset.name,
+            price:parseInt(cb.dataset.price)||0,
+            image:cb.dataset.image,
+            isLog:cb.dataset.islog==='true'
+        });
+    });
+    try{
+        await db.collection("settings").doc("flash_sale_config").set({endTime,items:selectedPackagesArray});
+        alert(`✅ Đã lưu Flash Sale với ${selectedPackagesArray.length} gói nạp!`);
+        loadFlashSale();
+        document.getElementById('admin-flash-panel').classList.add('hidden');
+    }catch(e){alert("❌ Lỗi lưu: "+e.message);}
+}
+
+// --- Trang chủ: Grid game nhỏ ---
+function loadHomeGameGrid(){
+    const g=document.getElementById('home-game-grid');
+    if(!g) return;
+    db.collection("Games").orderBy("ngay","asc").limit(6).onSnapshot(snap=>{
+        if(snap.empty){g.innerHTML='';return;}
+        g.innerHTML='';
+        snap.forEach(doc=>{
+            const d=doc.data();
+            g.innerHTML+=`<div onclick="openTab('nap-game');setTimeout(()=>goLv2('${doc.id}','${d.ten.replace(/'/g,"\\'")}'),300)" class="cursor-pointer group text-center">
+                <div class="overflow-hidden rounded-xl border border-gray-100 mb-1.5">
+                    <img src="${d.anh||'https://via.placeholder.com/100'}" class="w-full h-16 object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://via.placeholder.com/100'">
+                </div>
+                <p class="text-xs font-bold text-gray-700 group-hover:text-blue-700 transition truncate">${d.ten}</p>
+            </div>`;
+        });
+    });
+}
+
+// ===========================
 // ===== TAI KHOAN / DICH VU =====
+// ===========================
 function loadProducts(type){
     const gId=type==='tai-khoan'?'grid-tai-khoan':'grid-dich-vu';
-    const g=document.getElementById(gId);
-    if(!g) return;
+    const g=document.getElementById(gId);if(!g)return;
     g.innerHTML='<div class="col-span-4 text-center text-gray-400 py-8 text-sm">Đang tải...</div>';
     db.collection("SanPhamV2").where("loai","==",type).onSnapshot(snap=>{
         if(snap.empty){g.innerHTML='<div class="col-span-4 text-center text-gray-400 py-8 text-sm">Chưa có sản phẩm</div>';return;}
@@ -600,7 +876,7 @@ function loadProducts(type){
             const sp=doc.data();
             const isAuto=sp.mode==='auto';
             const stock=sp.listAcc?sp.listAcc.length:0;
-            const stk=isAuto?(stock>0?`<span class="text-xs text-green-600 font-semibold">Còn ${stock} acc</span>`:`<span class="text-xs text-red-500 font-semibold">Hết hàng</span>`):'';
+            const stk=isAuto?(stock>0?`<span class="text-xs text-green-600 font-semibold">Còn ${stock}</span>`:`<span class="text-xs text-red-500 font-semibold">Hết</span>`):'';
             const mb=isAuto?'<span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-semibold">⚡ Tự động</span>':'<span class="text-xs text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full font-semibold">✋ Thủ công</span>';
             g.innerHTML+=`<div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition cursor-pointer">
                 <img src="${sp.anh||'https://via.placeholder.com/200x130'}" class="w-full h-32 object-cover" onerror="this.src='https://via.placeholder.com/200x130'">
@@ -615,7 +891,6 @@ function loadProducts(type){
         });
     });
 }
-
 async function buySP(id,ten,gia,mode){
     if(!curUser) return openModal('loginModal');
     const uRef=db.collection("users").doc(curUser.email);
@@ -630,8 +905,7 @@ async function buySP(id,ten,gia,mode){
         await uRef.update({vnd:ud.vnd-gia});
         await db.collection("DonHang").add({email:curUser.email,tenSP:ten,gia,mode:'auto',acc,ngay:TS(),category:'tai-khoan'});
         await ghiGD(curUser.email,`Mua ${ten}`,gia,'tru',ud.vnd,ud.vnd-gia);
-        document.getElementById('auto-acc-info').innerText=acc;
-        openModal('autoModal');
+        document.getElementById('auto-acc-info').innerText=acc;openModal('autoModal');
     } else {
         await uRef.update({vnd:ud.vnd-gia});
         await db.collection("orders").add({email:curUser.email,tenSP:ten,gia,mode:'manual',status:'pending',category:'tai-khoan',ngay:TS()});
@@ -639,180 +913,98 @@ async function buySP(id,ten,gia,mode){
         alert("✅ Đơn hàng đã gửi! Admin sẽ xử lý sớm.");
     }
 }
-
-function togglePostMode(){
-    const m=document.getElementById('post-mode').value;
-    document.getElementById('auto-acc-section').classList.toggle('hidden',m==='manual');
-    document.getElementById('manual-acc-section').classList.toggle('hidden',m==='auto');
-}
-
+function togglePostMode(){const m=document.getElementById('post-mode').value;document.getElementById('auto-acc-section').classList.toggle('hidden',m==='manual');document.getElementById('manual-acc-section').classList.toggle('hidden',m==='auto');}
 async function adminPostProduct(){
-    const ten=document.getElementById('post-name').value.trim();
-    const gia=parseInt(document.getElementById('post-price').value);
-    const anh=document.getElementById('post-img').value.trim();
-    const loai=document.getElementById('post-type').value;
-    const mode=document.getElementById('post-mode').value;
+    const ten=document.getElementById('post-name').value.trim();const gia=parseInt(document.getElementById('post-price').value);const anh=document.getElementById('post-img').value.trim();const loai=document.getElementById('post-type').value;const mode=document.getElementById('post-mode').value;
     if(!ten||!gia||!anh) return alert("Nhập đủ thông tin!");
-    let listAcc=[];
-    if(mode==='auto') listAcc=document.getElementById('post-acc-list').value.trim().split('\n').filter(l=>l.trim());
+    let listAcc=[];if(mode==='auto')listAcc=document.getElementById('post-acc-list').value.trim().split('\n').filter(l=>l.trim());
     await db.collection("SanPhamV2").add({ten,gia,anh,loai,mode,listAcc,ngay:TS()});
-    alert("✅ Đã đăng!");
-    ['post-name','post-price','post-img','post-acc-list'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    alert("✅ Đã đăng!");['post-name','post-price','post-img','post-acc-list'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
 }
+async function delSP(id){if(!confirm("Xóa?"))return;await db.collection("SanPhamV2").doc(id).delete();}
 
-async function delSP(id){
-    if(!confirm("Xác nhận xóa?")) return;
-    await db.collection("SanPhamV2").doc(id).delete();
-}
-
+// ===========================
 // ===== NẠP GAME 3 CẤP =====
-
-// --- CẤP 1: Game ---
+// ===========================
 function loadGameGrid(){
-    const g=document.getElementById('game-grid');
-    if(!g) return;
+    const g=document.getElementById('game-grid');if(!g)return;
     g.innerHTML='<div class="col-span-4 text-center text-gray-400 py-10 text-sm">Đang tải...</div>';
     db.collection("Games").orderBy("ngay","asc").onSnapshot(snap=>{
-        if(snap.empty){g.innerHTML='<div class="col-span-4 text-center text-gray-400 py-10 text-sm">Chưa có game nào. Admin hãy thêm game!</div>';return;}
+        if(snap.empty){g.innerHTML='<div class="col-span-4 text-center text-gray-400 py-10 text-sm">Chưa có game nào.</div>';return;}
         g.innerHTML='';
         snap.forEach(doc=>{
             const d=doc.data();
             g.innerHTML+=`<div onclick="goLv2('${doc.id}','${d.ten.replace(/'/g,"\\'")}' )" class="bg-white border border-gray-100 rounded-xl overflow-hidden cursor-pointer hover:shadow-md hover:border-blue-200 transition group">
-                <div class="overflow-hidden">
-                    <img src="${d.anh||'https://via.placeholder.com/200x128'}" class="w-full h-32 object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://via.placeholder.com/200x128'">
-                </div>
-                <div class="p-3 text-center">
-                    <p class="text-sm font-black text-gray-800 group-hover:text-blue-700 transition">${d.ten}</p>
-                </div>
-                ${isAdmin?`<div class="px-3 pb-3"><button onclick="event.stopPropagation();delGame('${doc.id}')" class="w-full bg-red-100 text-red-500 text-xs font-bold py-1.5 rounded-lg hover:bg-red-200">🗑️ Xóa Game</button></div>`:''}
+                <div class="overflow-hidden"><img src="${d.anh||'https://via.placeholder.com/200x128'}" class="w-full h-32 object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://via.placeholder.com/200x128'"></div>
+                <div class="p-3 text-center"><p class="text-sm font-black text-gray-800 group-hover:text-blue-700 transition">${d.ten}</p></div>
+                ${isAdmin?`<div class="px-3 pb-3"><button onclick="event.stopPropagation();delGame('${doc.id}')" class="w-full bg-red-100 text-red-500 text-xs font-bold py-1.5 rounded-lg hover:bg-red-200">🗑️ Xóa</button></div>`:''}
             </div>`;
         });
     });
 }
-
 async function addGame(){
-    if(!isAdmin) return;
-    const ten=document.getElementById('lv1-game-name').value.trim();
-    const anh=document.getElementById('lv1-game-img').value.trim()||'https://via.placeholder.com/200x128';
-    if(!ten) return alert("Nhập tên game!");
+    if(!isAdmin)return;const ten=document.getElementById('lv1-game-name').value.trim();const anh=document.getElementById('lv1-game-img').value.trim()||'https://via.placeholder.com/200x128';
+    if(!ten)return alert("Nhập tên game!");
     await db.collection("Games").add({ten,anh,ngay:TS()});
-    document.getElementById('lv1-game-name').value='';
-    document.getElementById('lv1-game-img').value='';
-    alert("✅ Đã thêm game!");
+    document.getElementById('lv1-game-name').value='';document.getElementById('lv1-game-img').value='';alert("✅ Đã thêm game!");
 }
+async function delGame(id){if(!confirm("Xóa game?"))return;await db.collection("Games").doc(id).delete();}
 
-async function delGame(id){
-    if(!confirm("Xóa game này?")) return;
-    await db.collection("Games").doc(id).delete();
-}
-
-// --- CẤP 2: Hình thức nạp ---
-function goLv2(gameId, gameName){
-    ngGameId=gameId; ngGameName=gameName;
-    document.getElementById('ng-lv1').classList.add('hidden');
-    document.getElementById('ng-lv2').classList.remove('hidden');
-    document.getElementById('ng-lv3').classList.add('hidden');
+function goLv2(gameId,gameName){
+    ngGameId=gameId;ngGameName=gameName;
+    document.getElementById('ng-lv1').classList.add('hidden');document.getElementById('ng-lv2').classList.remove('hidden');document.getElementById('ng-lv3').classList.add('hidden');
     document.getElementById('lv2-breadcrumb').innerText=gameName;
-    if(isAdmin) document.getElementById('btn-ng-lv2-admin')?.classList.remove('hidden');
+    if(isAdmin)document.getElementById('btn-ng-lv2-admin')?.classList.remove('hidden');
     loadNapTypeGrid();
 }
-
 function loadNapTypeGrid(){
-    const g=document.getElementById('naptype-grid');
-    if(!g) return;
+    const g=document.getElementById('naptype-grid');if(!g)return;
     g.innerHTML='<div class="col-span-4 text-center text-gray-400 py-10 text-sm">Đang tải...</div>';
     db.collection("Games").doc(ngGameId).collection("NapTypes").orderBy("ngay","asc").onSnapshot(snap=>{
-        if(snap.empty){g.innerHTML='<div class="col-span-4 text-center text-gray-400 py-10 text-sm">Chưa có hình thức nạp nào.</div>';return;}
+        if(snap.empty){g.innerHTML='<div class="col-span-4 text-center text-gray-400 py-10 text-sm">Chưa có hình thức nạp.</div>';return;}
         g.innerHTML='';
         snap.forEach(doc=>{
             const d=doc.data();
-            const modeBadge=d.mode==='uid'?'<span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-semibold">⚡ Nạp UID</span>':'<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-semibold">🔐 LOGIN</span>';
+            const mb=d.mode==='uid'?'<span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-semibold">⚡ Nạp UID</span>':'<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-semibold">🔐 LOGIN</span>';
             g.innerHTML+=`<div onclick="goLv3('${doc.id}','${d.ten.replace(/'/g,"\\'")}','${d.mode}')" class="bg-white border border-gray-100 rounded-xl overflow-hidden cursor-pointer hover:shadow-md hover:border-blue-200 transition group">
-                <div class="overflow-hidden">
-                    <img src="${d.anh||'https://via.placeholder.com/200x128'}" class="w-full h-28 object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://via.placeholder.com/200x128'">
-                </div>
-                <div class="p-3 text-center">
-                    <p class="text-sm font-black text-gray-800 group-hover:text-blue-700 transition truncate">${d.ten}</p>
-                    <div class="mt-1">${modeBadge}</div>
-                </div>
+                <div class="overflow-hidden"><img src="${d.anh||'https://via.placeholder.com/200x128'}" class="w-full h-28 object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://via.placeholder.com/200x128'"></div>
+                <div class="p-3 text-center"><p class="text-sm font-black text-gray-800 group-hover:text-blue-700 transition truncate">${d.ten}</p><div class="mt-1">${mb}</div></div>
                 ${isAdmin?`<div class="px-3 pb-3"><button onclick="event.stopPropagation();delNapType('${doc.id}')" class="w-full bg-red-100 text-red-500 text-xs font-bold py-1.5 rounded-lg hover:bg-red-200">🗑️ Xóa</button></div>`:''}
             </div>`;
         });
     });
 }
-
 async function addNapType(){
-    if(!isAdmin||!ngGameId) return;
-    const ten=document.getElementById('lv2-name').value.trim();
-    const anh=document.getElementById('lv2-img').value.trim()||'https://via.placeholder.com/200x128';
-    const mode=document.getElementById('lv2-type').value;
-    if(!ten) return alert("Nhập tên hình thức nạp!");
-    const suffix=mode==='uid'?' (Nạp UID)':' (LOGIN)';
-    const finalName=ten.includes('(Nạp UID)')||ten.includes('(LOGIN)')?ten:ten+suffix;
+    if(!isAdmin||!ngGameId)return;const ten=document.getElementById('lv2-name').value.trim();const anh=document.getElementById('lv2-img').value.trim()||'https://via.placeholder.com/200x128';const mode=document.getElementById('lv2-type').value;
+    if(!ten)return alert("Nhập tên hình thức nạp!");
+    const suffix=mode==='uid'?' (Nạp UID)':' (LOGIN)';const finalName=ten.includes('(Nạp UID)')||ten.includes('(LOGIN)')?ten:ten+suffix;
     await db.collection("Games").doc(ngGameId).collection("NapTypes").add({ten:finalName,anh,mode,ngay:TS()});
-    document.getElementById('lv2-name').value='';
-    document.getElementById('lv2-img').value='';
-    alert("✅ Đã thêm hình thức nạp!");
+    document.getElementById('lv2-name').value='';document.getElementById('lv2-img').value='';alert("✅ Đã thêm!");
 }
+async function delNapType(id){if(!confirm("Xóa?"))return;await db.collection("Games").doc(ngGameId).collection("NapTypes").doc(id).delete();}
 
-async function delNapType(id){
-    if(!confirm("Xóa hình thức nạp này?")) return;
-    await db.collection("Games").doc(ngGameId).collection("NapTypes").doc(id).delete();
+function goLv3(typeId,typeName,typeMode){
+    ngTypeId=typeId;ngTypeName=typeName;ngTypeMode=typeMode;ngSelPkg=null;
+    document.getElementById('ng-lv1').classList.add('hidden');document.getElementById('ng-lv2').classList.add('hidden');document.getElementById('ng-lv3').classList.remove('hidden');
+    document.getElementById('lv3-bc-game').innerText=ngGameName;document.getElementById('lv3-breadcrumb').innerText=typeName;
+    if(typeMode==='uid'){document.getElementById('form-uid').classList.remove('hidden');document.getElementById('form-log').classList.add('hidden');}
+    else{document.getElementById('form-uid').classList.add('hidden');document.getElementById('form-log').classList.remove('hidden');}
+    if(isAdmin){document.getElementById('btn-ng-lv3-admin')?.classList.remove('hidden');loadAdminDeleteList();}
+    loadPackageGrid();loadDescription();resetCart();
 }
-
-// --- CẤP 3: Trang chi tiết ---
-function goLv3(typeId, typeName, typeMode){
-    ngTypeId=typeId; ngTypeName=typeName; ngTypeMode=typeMode;
-    ngSelPkg=null;
-    document.getElementById('ng-lv1').classList.add('hidden');
-    document.getElementById('ng-lv2').classList.add('hidden');
-    document.getElementById('ng-lv3').classList.remove('hidden');
-    document.getElementById('lv3-bc-game').innerText=ngGameName;
-    document.getElementById('lv3-breadcrumb').innerText=typeName;
-
-    // Hiện form theo mode
-    if(typeMode==='uid'){
-        document.getElementById('form-uid').classList.remove('hidden');
-        document.getElementById('form-log').classList.add('hidden');
-    } else {
-        document.getElementById('form-uid').classList.add('hidden');
-        document.getElementById('form-log').classList.remove('hidden');
-    }
-
-    if(isAdmin){
-        document.getElementById('btn-ng-lv3-admin')?.classList.remove('hidden');
-        loadAdminDeleteList();
-    }
-    loadPackageGrid();
-    loadDescription();
-    resetCart();
-}
-
 function ngBack(level){
-    document.getElementById('ng-lv3').classList.add('hidden');
-    document.getElementById('ng-lv2').classList.add('hidden');
-    document.getElementById('ng-lv1').classList.add('hidden');
-    if(level===1){
-        document.getElementById('ng-lv1').classList.remove('hidden');
-        ngGameId=null; ngGameName=''; ngTypeId=null; ngTypeName=''; ngTypeMode='uid'; ngSelPkg=null;
-        loadGameGrid();
-    } else {
-        document.getElementById('ng-lv2').classList.remove('hidden');
-        ngTypeId=null; ngTypeName=''; ngTypeMode='uid'; ngSelPkg=null;
-        loadNapTypeGrid();
-    }
+    document.getElementById('ng-lv3').classList.add('hidden');document.getElementById('ng-lv2').classList.add('hidden');document.getElementById('ng-lv1').classList.add('hidden');
+    if(level===1){document.getElementById('ng-lv1').classList.remove('hidden');ngGameId=null;ngGameName='';ngTypeId=null;ngTypeName='';ngTypeMode='uid';ngSelPkg=null;loadGameGrid();}
+    else{document.getElementById('ng-lv2').classList.remove('hidden');ngTypeId=null;ngTypeName='';ngTypeMode='uid';ngSelPkg=null;loadNapTypeGrid();}
 }
-
 function loadPackageGrid(){
-    const g=document.getElementById('pkg-grid');
-    if(!g) return;
+    const g=document.getElementById('pkg-grid');if(!g)return;
     g.innerHTML='<div class="col-span-3 text-center text-gray-400 py-6 text-sm">Đang tải...</div>';
     db.collection("Games").doc(ngGameId).collection("NapTypes").doc(ngTypeId).collection("Packages").orderBy("ngay","asc").onSnapshot(snap=>{
         if(snap.empty){g.innerHTML='<div class="col-span-3 text-center text-gray-400 py-6 text-sm">Chưa có gói nạp</div>';return;}
         g.innerHTML='';
         snap.forEach(doc=>{
-            const d=doc.data();
-            const pkgObj={id:doc.id,...d};
+            const d=doc.data();const pkgObj={id:doc.id,...d};
             g.innerHTML+=`<div id="pkg-${doc.id}" onclick='selPkg(${JSON.stringify(pkgObj)})' class="pkg-card border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:border-blue-400 transition flex flex-col items-center gap-2">
                 <img src="${d.anh||'https://via.placeholder.com/60'}" class="w-14 h-14 object-contain" onerror="this.src='https://via.placeholder.com/56'">
                 <p class="text-xs font-bold text-gray-700 line-clamp-2">${d.ten}</p>
@@ -821,382 +1013,185 @@ function loadPackageGrid(){
         });
     });
 }
-
 function selPkg(pkg){
-    ngSelPkg=pkg;
-    document.querySelectorAll('.pkg-card').forEach(el=>el.classList.remove('pkg-active'));
-    document.getElementById('pkg-'+pkg.id)?.classList.add('pkg-active');
-    document.getElementById('cart-qty').value=1;
-    updateCart();
+    ngSelPkg=pkg;document.querySelectorAll('.pkg-card').forEach(el=>el.classList.remove('pkg-active'));document.getElementById('pkg-'+pkg.id)?.classList.add('pkg-active');document.getElementById('cart-qty').value=1;updateCart();
 }
-
 function changeQty(v){
-    if(!ngSelPkg) return alert("Chọn gói nạp trước!");
-    const q=document.getElementById('cart-qty');
-    let val=parseInt(q.value)+v;
-    if(val<1) val=1;
-    q.value=val;
-    updateCart();
+    if(!ngSelPkg)return alert("Chọn gói nạp trước!");const q=document.getElementById('cart-qty');let val=parseInt(q.value)+v;if(val<1)val=1;q.value=val;updateCart();
 }
-
 function updateCart(){
-    const cartBox=document.getElementById('cart-pkg-box');
-    const cartTotal=document.getElementById('cart-total');
-    const qty=parseInt(document.getElementById('cart-qty').value);
-    if(!ngSelPkg){resetCart();return;}
-    const total=ngSelPkg.gia*qty;
-    cartBox.innerHTML=`<div class="flex items-center gap-3">
-        <img src="${ngSelPkg.anh||'https://via.placeholder.com/40'}" class="w-12 h-12 object-contain rounded-lg flex-shrink-0" onerror="this.src='https://via.placeholder.com/48'">
-        <div>
-            <p class="text-sm font-bold text-gray-800 line-clamp-2">${ngSelPkg.ten}</p>
-            <p class="text-sm font-black text-blue-700 mt-0.5">${Number(ngSelPkg.gia).toLocaleString()}đ / gói</p>
-        </div>
-    </div>`;
+    const cartBox=document.getElementById('cart-pkg-box');const cartTotal=document.getElementById('cart-total');const qty=parseInt(document.getElementById('cart-qty').value);
+    if(!ngSelPkg){resetCart();return;}const total=ngSelPkg.gia*qty;
+    cartBox.innerHTML=`<div class="flex items-center gap-3"><img src="${ngSelPkg.anh||'https://via.placeholder.com/40'}" class="w-12 h-12 object-contain rounded-lg flex-shrink-0" onerror="this.src='https://via.placeholder.com/48'"><div><p class="text-sm font-bold text-gray-800 line-clamp-2">${ngSelPkg.ten}</p><p class="text-sm font-black text-blue-700 mt-0.5">${Number(ngSelPkg.gia).toLocaleString()}đ / gói</p></div></div>`;
     cartTotal.innerText=total.toLocaleString()+'đ';
 }
-
-function resetCart(){
-    document.getElementById('cart-pkg-box').innerHTML='<p class="text-xs text-gray-400 text-center py-2">Chưa chọn gói nào</p>';
-    document.getElementById('cart-total').innerText='0đ';
-    document.getElementById('cart-qty').value=1;
-}
-
+function resetCart(){document.getElementById('cart-pkg-box').innerHTML='<p class="text-xs text-gray-400 text-center py-2">Chưa chọn gói nào</p>';document.getElementById('cart-total').innerText='0đ';document.getElementById('cart-qty').value=1;}
 function loadDescription(){
-    const disp=document.getElementById('lv3-desc-display');
-    if(!disp) return;
-    db.collection("Games").doc(ngGameId).collection("NapTypes").doc(ngTypeId).get().then(doc=>{
-        disp.innerText=doc.data()?.moTa||'Chưa có mô tả.';
-    });
+    const disp=document.getElementById('lv3-desc-display');if(!disp)return;
+    db.collection("Games").doc(ngGameId).collection("NapTypes").doc(ngTypeId).get().then(doc=>{disp.innerText=doc.data()?.moTa||'Chưa có mô tả.';});
 }
-
 async function saveDescription(){
-    if(!isAdmin||!ngGameId||!ngTypeId) return;
-    const txt=document.getElementById('lv3-desc-input').value.trim();
+    if(!isAdmin||!ngGameId||!ngTypeId)return;const txt=document.getElementById('lv3-desc-input').value.trim();
     await db.collection("Games").doc(ngGameId).collection("NapTypes").doc(ngTypeId).update({moTa:txt});
-    document.getElementById('lv3-desc-display').innerText=txt;
-    alert("✅ Đã lưu mô tả!");
+    document.getElementById('lv3-desc-display').innerText=txt;alert("✅ Đã lưu mô tả!");
 }
-
 async function addPackage(){
-    if(!isAdmin||!ngGameId||!ngTypeId) return;
-    const ten=document.getElementById('lv3-pkg-name').value.trim();
-    const anh=document.getElementById('lv3-pkg-img').value.trim()||'https://via.placeholder.com/60';
-    const gia=parseInt(document.getElementById('lv3-pkg-price').value);
-    if(!ten||isNaN(gia)) return alert("Nhập đủ tên gói và giá!");
+    if(!isAdmin||!ngGameId||!ngTypeId)return;const ten=document.getElementById('lv3-pkg-name').value.trim();const anh=document.getElementById('lv3-pkg-img').value.trim()||'https://via.placeholder.com/60';const gia=parseInt(document.getElementById('lv3-pkg-price').value);
+    if(!ten||isNaN(gia))return alert("Nhập đủ tên gói và giá!");
     await db.collection("Games").doc(ngGameId).collection("NapTypes").doc(ngTypeId).collection("Packages").add({ten,anh,gia,ngay:TS()});
-    document.getElementById('lv3-pkg-name').value='';
-    document.getElementById('lv3-pkg-img').value='';
-    document.getElementById('lv3-pkg-price').value='';
-    alert("✅ Đã thêm gói nạp!");
-    loadAdminDeleteList();
+    document.getElementById('lv3-pkg-name').value='';document.getElementById('lv3-pkg-img').value='';document.getElementById('lv3-pkg-price').value='';alert("✅ Đã thêm gói!");loadAdminDeleteList();
 }
-
 function loadAdminDeleteList(){
-    const c=document.getElementById('admin-pkg-delete-list');
-    if(!c||!ngGameId||!ngTypeId) return;
-    c.innerHTML='';
+    const c=document.getElementById('admin-pkg-delete-list');if(!c||!ngGameId||!ngTypeId)return;c.innerHTML='';
     db.collection("Games").doc(ngGameId).collection("NapTypes").doc(ngTypeId).collection("Packages").orderBy("ngay","asc").get().then(snap=>{
         if(snap.empty){c.innerHTML='<p class="text-xs text-gray-400">Chưa có gói nạp</p>';return;}
         snap.forEach(doc=>{
             const d=doc.data();
-            c.innerHTML+=`<div class="flex items-center justify-between bg-white border border-gray-100 rounded-lg p-2">
-                <div class="flex items-center gap-2">
-                    <img src="${d.anh||'https://via.placeholder.com/32'}" class="w-8 h-8 object-contain rounded">
-                    <div><div class="text-xs font-semibold text-gray-700">${d.ten}</div><div class="text-xs text-red-500 font-bold">${Number(d.gia).toLocaleString()}đ</div></div>
-                </div>
-                <button onclick="delPkg('${doc.id}')" class="text-red-400 hover:text-red-600 text-xs px-2 py-1 bg-red-50 rounded font-bold"><i class="fas fa-trash"></i></button>
-            </div>`;
+            c.innerHTML+=`<div class="flex items-center justify-between bg-white border border-gray-100 rounded-lg p-2"><div class="flex items-center gap-2"><img src="${d.anh||'https://via.placeholder.com/32'}" class="w-8 h-8 object-contain rounded"><div><div class="text-xs font-semibold text-gray-700">${d.ten}</div><div class="text-xs text-red-500 font-bold">${Number(d.gia).toLocaleString()}đ</div></div></div><button onclick="delPkg('${doc.id}')" class="text-red-400 hover:text-red-600 text-xs px-2 py-1 bg-red-50 rounded font-bold"><i class="fas fa-trash"></i></button></div>`;
         });
     });
 }
+async function delPkg(pkgId){if(!confirm("Xóa gói?"))return;await db.collection("Games").doc(ngGameId).collection("NapTypes").doc(ngTypeId).collection("Packages").doc(pkgId).delete();loadAdminDeleteList();}
 
-async function delPkg(pkgId){
-    if(!confirm("Xóa gói nạp này?")) return;
-    await db.collection("Games").doc(ngGameId).collection("NapTypes").doc(ngTypeId).collection("Packages").doc(pkgId).delete();
-    loadAdminDeleteList();
-}
-
-// --- THANH TOÁN ---
 async function processPayment(){
-    if(!curUser) return openModal('loginModal');
-    if(!ngSelPkg) return alert("Vui lòng chọn gói nạp!");
-    const qty=parseInt(document.getElementById('cart-qty').value);
-    const total=ngSelPkg.gia*qty;
-
-    // Thu thập form
+    if(!curUser)return openModal('loginModal');if(!ngSelPkg)return alert("Vui lòng chọn gói nạp!");
+    const qty=parseInt(document.getElementById('cart-qty').value);const total=ngSelPkg.gia*qty;
     let formData={};
     if(ngTypeMode==='uid'){
-        const uid=document.getElementById('inp-uid').value.trim();
-        const server=document.getElementById('inp-server').value;
-        if(!uid) return alert("Nhập UID nhân vật!");
-        formData={uid,server};
+        const uid=document.getElementById('inp-uid').value.trim();const server=document.getElementById('inp-server').value;
+        if(!uid)return alert("Nhập UID nhân vật!");formData={uid,server};
     } else {
-        const uid=document.getElementById('inp-uid-log').value.trim();
-        const server=document.getElementById('inp-server-log').value;
-        const acc=document.getElementById('inp-acc').value.trim();
-        const pass=document.getElementById('inp-pass').value.trim();
-        const contact=document.getElementById('inp-contact').value.trim();
-        if(!uid||!acc||!pass||!contact) return alert("Điền đủ thông tin: UID, Tài khoản, Mật khẩu, Liên hệ!");
-        formData={uid,server,acc,pass,contact};
+        const uid=document.getElementById('inp-uid-log').value.trim();const server=document.getElementById('inp-server-log').value;const acc=document.getElementById('inp-acc').value.trim();const pass=document.getElementById('inp-pass').value.trim();const contact=document.getElementById('inp-contact').value.trim();
+        if(!uid||!acc||!pass||!contact)return alert("Điền đủ thông tin: UID, Tài khoản, Mật khẩu, Liên hệ!");formData={uid,server,acc,pass,contact};
     }
-
-    // Kiểm tra số dư
-    const uRef=db.collection("users").doc(curUser.email);
-    const ud=(await uRef.get()).data()||{vnd:0};
-    if(ud.vnd<total) return alert(`❌ Không đủ số dư!\nSố dư: ${ud.vnd.toLocaleString()}đ\nCần: ${total.toLocaleString()}đ`);
-
-    if(!confirm(`Xác nhận thanh toán?\n\n${ngSelPkg.ten}\nSố lượng: ${qty}\nTổng: ${total.toLocaleString()}đ`)) return;
-
-    // Trừ tiền
+    const uRef=db.collection("users").doc(curUser.email);const ud=(await uRef.get()).data()||{vnd:0};
+    if(ud.vnd<total)return alert(`❌ Không đủ số dư!\nSố dư: ${ud.vnd.toLocaleString()}đ\nCần: ${total.toLocaleString()}đ`);
+    if(!confirm(`Xác nhận thanh toán?\n\n${ngSelPkg.ten}\nSố lượng: ${qty}\nTổng: ${total.toLocaleString()}đ`))return;
     await uRef.update({vnd:ud.vnd-total});
-
-    // Đẩy đơn vào orders (status=pending) - bay về hộp thư admin
-    const orderRef=await db.collection("orders").add({
-        email:curUser.email,
-        category:'nap-game',
-        gameName:ngGameName,
-        gameId:ngGameId,
-        typeId:ngTypeId,
-        typeName:ngTypeName,
-        typeMode:ngTypeMode,
-        pkgName:ngSelPkg.ten,
-        pkgPrice:ngSelPkg.gia,
-        quantity:qty,
-        totalPrice:total,
-        formData,
-        status:'pending',
-        ngay:TS()
-    });
-
+    const orderRef=await db.collection("orders").add({email:curUser.email,category:'nap-game',gameName:ngGameName,gameId:ngGameId,typeId:ngTypeId,typeName:ngTypeName,typeMode:ngTypeMode,pkgName:ngSelPkg.ten,pkgPrice:ngSelPkg.gia,quantity:qty,totalPrice:total,formData,status:'pending',ngay:TS()});
     await ghiGD(curUser.email,`Nạp game ${ngGameName} - ${ngSelPkg.ten}`,total,'tru',ud.vnd,ud.vnd-total);
-
-    // Hiện modal
     const det=document.getElementById('order-ok-detail');
-    const infoTxt=ngTypeMode==='uid'?`UID: ${formData.uid} | Server: ${formData.server}`:`Tài khoản: ${formData.acc} | Server: ${formData.server} | Liên hệ: ${formData.contact}`;
-    det.innerHTML=`
-        <div class="flex justify-between"><span class="text-gray-500">Game:</span><span class="font-bold">${ngGameName}</span></div>
-        <div class="flex justify-between"><span class="text-gray-500">Hình thức:</span><span class="font-bold text-xs">${ngTypeName}</span></div>
-        <div class="flex justify-between"><span class="text-gray-500">Gói:</span><span class="font-bold text-xs">${ngSelPkg.ten}</span></div>
-        <div class="flex justify-between"><span class="text-gray-500">Số lượng:</span><span class="font-bold">${qty}</span></div>
-        <div class="flex justify-between"><span class="text-gray-500">Tổng tiền:</span><span class="font-black text-blue-700">${total.toLocaleString()}đ</span></div>
-        <div class="flex justify-between"><span class="text-gray-500">Thông tin:</span><span class="font-semibold text-xs">${infoTxt}</span></div>
-        <div class="flex justify-between"><span class="text-gray-500">Mã đơn:</span><span class="font-mono text-xs text-gray-600">${orderRef.id.substring(0,12).toUpperCase()}</span></div>`;
+    const infoTxt=ngTypeMode==='uid'?`UID: ${formData.uid} | Server: ${formData.server}`:`Acc: ${formData.acc} | Server: ${formData.server} | Liên hệ: ${formData.contact}`;
+    det.innerHTML=`<div class="flex justify-between"><span class="text-gray-500">Game:</span><span class="font-bold">${ngGameName}</span></div><div class="flex justify-between"><span class="text-gray-500">Gói:</span><span class="font-bold text-xs">${ngSelPkg.ten}</span></div><div class="flex justify-between"><span class="text-gray-500">Số lượng:</span><span class="font-bold">${qty}</span></div><div class="flex justify-between"><span class="text-gray-500">Tổng tiền:</span><span class="font-black text-blue-700">${total.toLocaleString()}đ</span></div><div class="flex justify-between"><span class="text-gray-500">Thông tin:</span><span class="font-semibold text-xs">${infoTxt}</span></div><div class="flex justify-between"><span class="text-gray-500">Mã đơn:</span><span class="font-mono text-xs text-gray-600">${orderRef.id.substring(0,12).toUpperCase()}</span></div>`;
     openModal('orderOkModal');
-
-    // Reset form
     ['inp-uid','inp-uid-log','inp-acc','inp-pass','inp-contact'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-    ngSelPkg=null;
-    document.querySelectorAll('.pkg-card').forEach(el=>el.classList.remove('pkg-active'));
-    resetCart();
+    ngSelPkg=null;document.querySelectorAll('.pkg-card').forEach(el=>el.classList.remove('pkg-active'));resetCart();
 }
 
 // ===== HỘP THƯ ADMIN =====
 let curInboxTab='nap-game';
-
 function switchInboxTab(tab){
-    curInboxTab=tab;
-    document.querySelectorAll('.inbox-panel').forEach(p=>p.classList.add('hidden'));
-    document.querySelectorAll('.inbox-tab-btn').forEach(b=>{
-        b.classList.remove('active-itab','border-blue-600','text-blue-700');
-        b.classList.add('text-gray-500','border-transparent');
-    });
+    curInboxTab=tab;document.querySelectorAll('.inbox-panel').forEach(p=>p.classList.add('hidden'));
+    document.querySelectorAll('.inbox-tab-btn').forEach(b=>{b.classList.remove('border-blue-600','text-blue-700');b.classList.add('text-gray-500','border-transparent');});
     document.getElementById('inbox-'+tab)?.classList.remove('hidden');
-    const btn=document.getElementById('itab-'+tab);
-    btn?.classList.add('active-itab','border-blue-600','text-blue-700');
-    btn?.classList.remove('text-gray-500','border-transparent');
+    const btn=document.getElementById('itab-'+tab);btn?.classList.add('border-blue-600','text-blue-700');btn?.classList.remove('text-gray-500','border-transparent');
     loadInbox(tab);
 }
-
 function loadInbox(category){
-    const c=document.getElementById('inbox-'+category);
-    if(!c) return;
+    const c=document.getElementById('inbox-'+category);if(!c)return;
     c.innerHTML='<div class="text-center text-gray-400 py-6 text-sm">Đang tải...</div>';
-    let q=db.collection("orders").where("status","==","pending").where("category","==",category).orderBy("ngay","desc").limit(30);
-    q.get().then(snap=>{
-        if(snap.empty){c.innerHTML='<div class="text-center text-gray-400 py-8 text-sm">✅ Không có đơn chờ xử lý</div>';return;}
+    db.collection("orders").where("status","==","pending").where("category","==",category).orderBy("ngay","desc").limit(30).get().then(snap=>{
+        if(snap.empty){c.innerHTML='<div class="text-center text-gray-400 py-8 text-sm">✅ Không có đơn chờ</div>';return;}
         c.innerHTML='';
         snap.forEach(doc=>{
             const d=doc.data();
             let detail='';
-            if(category==='nap-game'){
-                const fi=d.formData||{};
-                const infoTxt=d.typeMode==='uid'?`UID: ${fi.uid} | Server: ${fi.server}`:`Acc: ${fi.acc} | Pass: ${fi.pass} | Server: ${fi.server} | Liên hệ: ${fi.contact}`;
-                detail=`<div class="text-sm text-gray-700 mt-1"><span class="font-bold">${d.gameName}</span> → ${d.typeName}</div>
-                    <div class="text-sm text-gray-600">Gói: ${d.pkgName} × ${d.quantity}</div>
-                    <div class="text-sm font-bold text-blue-700">${Number(d.totalPrice||0).toLocaleString()}đ</div>
-                    <div class="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded p-2 mt-2 break-all">${infoTxt}</div>`;
-            } else if(category==='buff-mxh'){
-                detail=`<div class="text-sm text-gray-700 mt-1">${d.platform?.toUpperCase()} | ${d.buffType} × ${Number(d.amount||0).toLocaleString()}</div>
-                    <div class="text-xs text-gray-500">${d.quality}</div>
-                    <div class="text-xs text-blue-600 break-all mt-1">${d.link}</div>`;
-            } else {
-                detail=`<div class="text-sm text-gray-700 mt-1">${d.tenSP||'-'}</div>
-                    <div class="text-sm font-bold text-blue-700">${Number(d.gia||0).toLocaleString()}đ</div>`;
-            }
+            if(category==='nap-game'){const fi=d.formData||{};const it=d.typeMode==='uid'?`UID: ${fi.uid} | Server: ${fi.server}`:`Acc: ${fi.acc} | Pass: ${fi.pass} | Server: ${fi.server} | LH: ${fi.contact}`;detail=`<div class="text-sm text-gray-700 mt-1"><span class="font-bold">${d.gameName}</span> → ${d.typeName}</div><div class="text-sm text-gray-600">Gói: ${d.pkgName} × ${d.quantity}</div><div class="text-sm font-bold text-blue-700">${Number(d.totalPrice||0).toLocaleString()}đ</div><div class="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded p-2 mt-2 break-all">${it}</div>`;}
+            else if(category==='buff-mxh')detail=`<div class="text-sm text-gray-700 mt-1">${d.platform?.toUpperCase()} | ${d.buffType} × ${Number(d.amount||0).toLocaleString()}</div><div class="text-xs text-blue-600 break-all mt-1">${d.link}</div>`;
+            else detail=`<div class="text-sm text-gray-700 mt-1">${d.tenSP||'-'}</div><div class="text-sm font-bold text-blue-700">${Number(d.gia||0).toLocaleString()}đ</div>`;
             c.innerHTML+=`<div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
                 <div class="flex items-start justify-between mb-3">
-                    <div>
-                        <div class="font-black text-gray-800">Đơn #${doc.id.substring(0,10).toUpperCase()}</div>
-                        <div class="text-xs text-gray-500">${d.email}</div>
-                        ${detail}
-                    </div>
+                    <div><div class="font-black text-gray-800">Đơn #${doc.id.substring(0,10).toUpperCase()}</div><div class="text-xs text-gray-500">${d.email}</div>${detail}</div>
                     <span class="text-xs font-bold text-yellow-600 bg-yellow-50 border border-yellow-200 px-2 py-1 rounded-full flex-shrink-0 ml-2">Chờ xử lý</span>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
-                    <input type="number" id="ti-${doc.id}" placeholder="Phút hoàn thành" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-36 outline-none focus:border-blue-400">
+                    <input type="number" id="ti-${doc.id}" placeholder="Phút HT" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-28 outline-none focus:border-blue-400">
                     <button onclick="adminOk('${doc.id}','${d.email||''}',${d.totalPrice||d.gia||0})" class="bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-green-700">✅ Thành công</button>
                     <button onclick="adminFail('${doc.id}','${d.email||''}',${d.totalPrice||d.gia||0})" class="bg-red-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-red-700">❌ Thất bại</button>
                 </div>
             </div>`;
         });
-    }).catch(err=>{
-        c.innerHTML=`<div class="text-center text-gray-400 py-6 text-sm">Cần tạo Composite Index trên Firestore cho collection 'orders' (status + category + ngay). Lỗi: ${err.message}</div>`;
-    });
+    }).catch(err=>{c.innerHTML=`<div class="text-center text-gray-400 py-6 text-sm">Cần tạo Composite Index Firestore. Lỗi: ${err.message}</div>`;});
 }
-
 async function adminOk(id,email,gia){
-    const t=parseInt(document.getElementById('ti-'+id)?.value);
-    if(!t||t<1) return alert("Nhập số phút ước tính hoàn thành!");
+    const t=parseInt(document.getElementById('ti-'+id)?.value);if(!t||t<1)return alert("Nhập số phút ước tính!");
     await db.collection("orders").doc(id).update({status:'processing',finishAt:new Date(Date.now()+t*60000).toISOString()});
-    // Sau t phút → tự chuyển success
-    setTimeout(async()=>{
-        await db.collection("orders").doc(id).update({status:'success'});
-    },t*60000);
-    alert(`✅ Đã duyệt! Đơn sẽ hoàn thành sau ${t} phút.`);
-    loadInbox(curInboxTab);
+    setTimeout(async()=>{await db.collection("orders").doc(id).update({status:'success'});},t*60000);
+    alert(`✅ Đã duyệt! Hoàn thành sau ${t} phút.`);loadInbox(curInboxTab);
 }
-
 async function adminFail(id,email,gia){
-    if(!confirm("Thất bại sẽ hoàn tiền cho khách. Xác nhận?")) return;
+    if(!confirm("Thất bại → hoàn tiền khách. Xác nhận?"))return;
     await db.collection("orders").doc(id).update({status:'failed'});
-    if(gia>0&&email){
-        const uRef=db.collection("users").doc(email);
-        const ud=(await uRef.get()).data()||{vnd:0};
-        await uRef.update({vnd:ud.vnd+gia});
-        await ghiGD(email,'Hoàn tiền đơn thất bại',gia,'cong',ud.vnd,ud.vnd+gia);
-    }
-    alert("✅ Đã đánh dấu thất bại và hoàn tiền!");
-    loadInbox(curInboxTab);
+    if(gia>0&&email){const uRef=db.collection("users").doc(email);const ud=(await uRef.get()).data()||{vnd:0};await uRef.update({vnd:ud.vnd+gia});await ghiGD(email,'Hoàn tiền đơn thất bại',gia,'cong',ud.vnd,ud.vnd+gia);}
+    alert("✅ Đã đánh dấu thất bại và hoàn tiền!");loadInbox(curInboxTab);
 }
 
 // ===== BUFF MXH =====
 function selPlatform(name,btn){
     document.querySelectorAll('.platform-btn').forEach(b=>{b.classList.remove('bg-blue-700','text-white','border-blue-700');b.classList.add('bg-white','text-gray-600','border-gray-200');});
-    btn.classList.add('bg-blue-700','text-white','border-blue-700');
-    btn.classList.remove('bg-white','text-gray-600','border-gray-200');
+    btn.classList.add('bg-blue-700','text-white','border-blue-700');btn.classList.remove('bg-white','text-gray-600','border-gray-200');
     selPlatformVal=name;
 }
-
 async function submitBuff(){
-    if(!curUser) return openModal('loginModal');
-    const type=document.getElementById('buff-type').value;
-    const quality=document.querySelector('input[name="buff-q"]:checked').value;
-    const link=document.getElementById('buff-link').value.trim();
-    const amount=document.getElementById('buff-amount').value;
-    if(!link||!amount) return alert("Nhập đủ Link và Số lượng!");
+    if(!curUser)return openModal('loginModal');
+    const type=document.getElementById('buff-type').value;const quality=document.querySelector('input[name="buff-q"]:checked').value;const link=document.getElementById('buff-link').value.trim();const amount=document.getElementById('buff-amount').value;
+    if(!link||!amount)return alert("Nhập đủ Link và Số lượng!");
     await db.collection("orders").add({email:curUser.email,platform:selPlatformVal,buffType:type,quality,link,amount:parseInt(amount),status:'pending',category:'buff-mxh',ngay:TS()});
-    alert("✅ Tạo đơn Buff thành công!");
-    document.getElementById('buff-link').value='';
-    document.getElementById('buff-amount').value='';
-    loadBuffOrders();
+    alert("✅ Tạo đơn Buff thành công!");document.getElementById('buff-link').value='';document.getElementById('buff-amount').value='';loadBuffOrders();
 }
-
 function loadBuffOrders(){
-    if(!curUser) return;
-    const c=document.getElementById('buff-orders-list');
+    if(!curUser)return;const c=document.getElementById('buff-orders-list');
     db.collection("orders").where("email","==",curUser.email).where("category","==","buff-mxh").orderBy("ngay","desc").limit(15).get().then(snap=>{
         if(snap.empty){c.innerHTML='<div class="text-center text-gray-400 text-sm py-8">Chưa có đơn hàng</div>';return;}
         c.innerHTML='';
         snap.forEach(doc=>{
-            const d=doc.data();
-            const sc=d.status==='success'?'text-green-600 bg-green-50':d.status==='failed'?'text-red-600 bg-red-50':d.status==='processing'?'text-blue-600 bg-blue-50':'text-yellow-600 bg-yellow-50';
-            const st=d.status==='success'?'Thành công':d.status==='failed'?'Thất bại':d.status==='processing'?'Đang xử lý':'Chờ duyệt';
+            const d=doc.data();const st=d.status==='success'?'Thành công':d.status==='failed'?'Thất bại':d.status==='processing'?'Đang xử lý':'Chờ duyệt';const sc=d.status==='success'?'text-green-600':d.status==='failed'?'text-red-600':d.status==='processing'?'text-blue-600':'text-yellow-600';
             const pi=d.platform==='facebook'?'🔵':d.platform==='tiktok'?'⚫':'🔴';
-            c.innerHTML+=`<div class="border rounded-xl p-3 ${sc.split(' ')[1]} border-gray-100"><div class="flex justify-between items-start"><div><div class="font-bold text-gray-800 text-sm">${pi} #${doc.id.substring(0,6).toUpperCase()}</div><div class="text-xs text-gray-600">${d.buffType} × ${Number(d.amount||0).toLocaleString()}</div><div class="text-xs text-gray-400">${d.quality}</div></div><span class="text-xs font-black ${sc.split(' ')[0]}">${st}</span></div></div>`;
+            c.innerHTML+=`<div class="border rounded-xl p-3 border-gray-100 bg-white"><div class="flex justify-between items-start"><div><div class="font-bold text-gray-800 text-sm">${pi} #${doc.id.substring(0,6).toUpperCase()}</div><div class="text-xs text-gray-600">${d.buffType} × ${Number(d.amount||0).toLocaleString()}</div><div class="text-xs text-gray-400">${d.quality}</div></div><span class="text-xs font-black ${sc}">${st}</span></div></div>`;
         });
     }).catch(()=>{});
 }
 
 // ===== LỊCH SỬ =====
 function loadLichSu(){
-    if(!curUser) return;
-    const c=document.getElementById('list-lich-su');
-    c.innerHTML='<div class="text-center text-gray-400 py-6 text-sm">Đang tải...</div>';
+    if(!curUser)return;const c=document.getElementById('list-lich-su');c.innerHTML='<div class="text-center text-gray-400 py-6 text-sm">Đang tải...</div>';
     db.collection("orders").where("email","==",curUser.email).orderBy("ngay","desc").limit(30).get().then(snap=>{
         if(snap.empty){c.innerHTML='<div class="text-center text-gray-400 py-8 text-sm">Chưa có lịch sử</div>';return;}
         c.innerHTML='';
         snap.forEach(doc=>{
-            const d=doc.data();
-            const st=d.status==='success'?'Thành công':d.status==='failed'?'Thất bại':d.status==='processing'?'Đang xử lý':'Chờ duyệt';
-            const sc=d.status==='success'?'text-green-600 bg-green-50':d.status==='failed'?'text-red-600 bg-red-50':'text-yellow-600 bg-yellow-50';
-            const name=d.category==='nap-game'?`${d.gameName} - ${d.pkgName}`:d.tenSP||d.buffType||'-';
-            const amt=d.totalPrice||d.gia||0;
+            const d=doc.data();const st=d.status==='success'?'Thành công':d.status==='failed'?'Thất bại':d.status==='processing'?'Đang xử lý':'Chờ duyệt';const sc=d.status==='success'?'text-green-600 bg-green-50':d.status==='failed'?'text-red-600 bg-red-50':'text-yellow-600 bg-yellow-50';
+            const name=d.category==='nap-game'?`${d.gameName} - ${d.pkgName}`:d.tenSP||d.buffType||'-';const amt=d.totalPrice||d.gia||0;
             c.innerHTML+=`<div class="border border-gray-100 rounded-xl p-4 mb-3 flex justify-between items-center"><div><div class="font-bold text-gray-800 text-sm">${name}</div><div class="text-xs text-gray-400 capitalize">${d.category}</div><div class="text-xs text-gray-400">Mã: ${doc.id.substring(0,12).toUpperCase()}</div></div><div class="text-right"><div class="font-black text-gray-800">${Number(amt).toLocaleString()}đ</div><span class="text-xs font-bold px-2 py-0.5 rounded-full ${sc}">${st}</span></div></div>`;
         });
-    }).catch(()=>{c.innerHTML='<div class="text-center text-gray-400 py-4 text-sm">Cần tạo Firestore index cho collection orders</div>';});
+    }).catch(()=>{c.innerHTML='<div class="text-center text-gray-400 py-4 text-sm">Cần tạo Firestore index</div>';});
 }
-
 function loadBienDong(){
-    if(!curUser) return;
-    const c=document.getElementById('list-bien-dong');
-    c.innerHTML='<div class="text-center text-gray-400 py-6 text-sm">Đang tải...</div>';
+    if(!curUser)return;const c=document.getElementById('list-bien-dong');c.innerHTML='<div class="text-center text-gray-400 py-6 text-sm">Đang tải...</div>';
     db.collection("GiaoDich").where("email","==",curUser.email).orderBy("thoiGian","desc").limit(20).get().then(snap=>{
         if(snap.empty){c.innerHTML='<div class="text-center text-gray-400 py-8 text-sm">Chưa có giao dịch</div>';return;}
         c.innerHTML='';
-        snap.forEach(doc=>{
-            const d=doc.data();
-            const ip=d.loai==='cong';
-            const ng=d.thoiGian?new Date(d.thoiGian.toDate()).toLocaleString('vi-VN'):'-';
-            c.innerHTML+=`<div class="border border-gray-100 rounded-xl p-4 mb-3"><div class="flex justify-between mb-2"><div class="font-semibold text-gray-700 text-sm">${d.moTa}</div><div class="font-black ${ip?'text-green-600':'text-red-600'}">${ip?'+':'-'}${Number(d.soTien||0).toLocaleString()}đ</div></div><div class="text-xs text-gray-400 mb-2">⏰ ${ng}</div><div class="flex gap-4 bg-gray-50 rounded-lg p-3 text-center"><div class="flex-1"><div class="text-xs text-gray-400">Trước</div><div class="font-bold text-sm">${Number(d.truoc||0).toLocaleString()}đ</div></div><div class="text-gray-300 self-center">→</div><div class="flex-1"><div class="text-xs text-gray-400">Sau</div><div class="font-bold text-sm">${Number(d.sau||0).toLocaleString()}đ</div></div></div></div>`;
-        });
-    }).catch(()=>{c.innerHTML='<div class="text-center text-gray-400 py-4 text-sm">Lỗi tải dữ liệu</div>';});
+        snap.forEach(doc=>{const d=doc.data();const ip=d.loai==='cong';const ng=d.thoiGian?new Date(d.thoiGian.toDate()).toLocaleString('vi-VN'):'-';c.innerHTML+=`<div class="border border-gray-100 rounded-xl p-4 mb-3"><div class="flex justify-between mb-2"><div class="font-semibold text-gray-700 text-sm">${d.moTa}</div><div class="font-black ${ip?'text-green-600':'text-red-600'}">${ip?'+':'-'}${Number(d.soTien||0).toLocaleString()}đ</div></div><div class="text-xs text-gray-400 mb-2">⏰ ${ng}</div><div class="flex gap-4 bg-gray-50 rounded-lg p-3 text-center"><div class="flex-1"><div class="text-xs text-gray-400">Trước</div><div class="font-bold text-sm">${Number(d.truoc||0).toLocaleString()}đ</div></div><div class="text-gray-300 self-center">→</div><div class="flex-1"><div class="text-xs text-gray-400">Sau</div><div class="font-bold text-sm">${Number(d.sau||0).toLocaleString()}đ</div></div></div></div>`;});
+    }).catch(()=>{});
 }
 
 // ===== NẠP THẺ =====
-function selCarrier(el,name){
-    document.querySelectorAll('#carrier-grid .carrier-btn').forEach(b=>{b.classList.remove('selected','border-blue-700','bg-blue-50','text-blue-700');b.classList.add('border-gray-200','text-gray-600');});
-    el.classList.add('selected','border-blue-700','bg-blue-50','text-blue-700');
-    el.classList.remove('border-gray-200','text-gray-600');
-    selCarrierVal=name;
-}
-function selDenom(el,v){
-    document.querySelectorAll('#denom-grid .denom-btn').forEach(b=>{b.classList.remove('selected','border-blue-700','bg-blue-50','text-blue-700');b.classList.add('border-gray-200','text-gray-600');});
-    el.classList.add('selected','border-blue-700','bg-blue-50','text-blue-700');
-    el.classList.remove('border-gray-200','text-gray-600');
-    selDenomVal=v;
-    document.getElementById('the-amount').innerText=Math.round(v*0.8).toLocaleString()+'đ';
-}
+function selCarrier(el,name){document.querySelectorAll('#carrier-grid .carrier-btn').forEach(b=>{b.classList.remove('selected','border-blue-700','bg-blue-50','text-blue-700');b.classList.add('border-gray-200','text-gray-600');});el.classList.add('selected','border-blue-700','bg-blue-50','text-blue-700');el.classList.remove('border-gray-200','text-gray-600');selCarrierVal=name;}
+function selDenom(el,v){document.querySelectorAll('#denom-grid .denom-btn').forEach(b=>{b.classList.remove('selected','border-blue-700','bg-blue-50','text-blue-700');b.classList.add('border-gray-200','text-gray-600');});el.classList.add('selected','border-blue-700','bg-blue-50','text-blue-700');el.classList.remove('border-gray-200','text-gray-600');selDenomVal=v;document.getElementById('the-amount').innerText=Math.round(v*0.8).toLocaleString()+'đ';}
 async function napThe(){
-    if(!curUser) return openModal('loginModal');
-    const seri=document.getElementById('the-seri').value.trim();
-    const pin=document.getElementById('the-pin').value.trim();
-    if(!selDenomVal) return alert("Chọn mệnh giá!");
-    if(!seri||!pin) return alert("Nhập Seri và Mã thẻ!");
+    if(!curUser)return openModal('loginModal');const seri=document.getElementById('the-seri').value.trim();const pin=document.getElementById('the-pin').value.trim();
+    if(!selDenomVal)return alert("Chọn mệnh giá!");if(!seri||!pin)return alert("Nhập Seri và Mã thẻ!");
     await db.collection("napthe").add({email:curUser.email,nhamang:selCarrierVal,menhgia:selDenomVal,seri,pin,status:"Chờ duyệt",thoiGian:TS()});
-    alert("✅ Thẻ đã gửi! Chờ hệ thống duyệt.");
-    document.getElementById('the-seri').value='';
-    document.getElementById('the-pin').value='';
+    alert("✅ Thẻ đã gửi! Chờ hệ thống duyệt.");document.getElementById('the-seri').value='';document.getElementById('the-pin').value='';
 }
 
 // ===== UTILS =====
-async function ghiGD(email,moTa,soTien,loai,truoc,sau){
-    await db.collection("GiaoDich").add({email,moTa,soTien,loai,truoc,sau,thoiGian:TS()});
-}
+async function ghiGD(email,moTa,soTien,loai,truoc,sau){await db.collection("GiaoDich").add({email,moTa,soTien,loai,truoc,sau,thoiGian:TS()});}
 function cpText(t){navigator.clipboard.writeText(t).then(()=>alert("✅ Đã copy!"));}
 async function doiMK(){
-    const cur=document.getElementById('pwd-cur').value;
-    const nw=document.getElementById('pwd-new').value;
-    const cf=document.getElementById('pwd-cf').value;
-    if(!cur||!nw||!cf) return alert("Điền đủ thông tin!");
-    if(nw!==cf) return alert("Mật khẩu mới không khớp!");
-    if(nw.length<6) return alert("Mật khẩu phải ≥ 6 ký tự!");
-    try{
-        const cred=firebase.auth.EmailAuthProvider.credential(curUser.email,cur);
-        await curUser.reauthenticateWithCredential(cred);
-        await curUser.updatePassword(nw);
-        alert("✅ Đổi mật khẩu thành công!");
-        ['pwd-cur','pwd-new','pwd-cf'].forEach(id=>document.getElementById(id).value='');
-    }catch(e){alert("❌ "+(e.code==='auth/wrong-password'?'Mật khẩu hiện tại không đúng!':e.message));}
+    const cur=document.getElementById('pwd-cur').value;const nw=document.getElementById('pwd-new').value;const cf=document.getElementById('pwd-cf').value;
+    if(!cur||!nw||!cf)return alert("Điền đủ thông tin!");if(nw!==cf)return alert("Mật khẩu mới không khớp!");if(nw.length<6)return alert("Mật khẩu phải ≥ 6 ký tự!");
+    try{const cred=firebase.auth.EmailAuthProvider.credential(curUser.email,cur);await curUser.reauthenticateWithCredential(cred);await curUser.updatePassword(nw);alert("✅ Đổi mật khẩu thành công!");['pwd-cur','pwd-new','pwd-cf'].forEach(id=>document.getElementById(id).value='');}
+    catch(e){alert("❌ "+(e.code==='auth/wrong-password'?'Mật khẩu hiện tại không đúng!':e.message));}
 }
 </script>
 </body>

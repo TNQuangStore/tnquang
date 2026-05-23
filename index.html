@@ -30,11 +30,16 @@
         .flash-sale-arrow:hover{background:#e03e3e}
         .arrow-left{left:-14px}
         .arrow-right{right:-14px}
+        
+        /* Custom scrollbar for recent list */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px;}
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
 
-<!-- ===== HEADER ===== -->
 <header class="bg-white shadow-sm sticky top-0 z-50">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 flex-shrink-0 cursor-pointer" onclick="openTab('home')">
@@ -64,23 +69,18 @@
 
 <div class="max-w-6xl mx-auto px-4 py-5">
 
-<!-- ===== TAB: TRANG CHỦ ===== -->
 <div id="tab-home" class="tab-content">
 
-    <!-- ADMIN: Quản lý Flash Sale -->
     <div id="admin-flash-panel" class="hidden mb-6 bg-white rounded-xl border-2 border-red-300 overflow-hidden">
         <div class="bg-red-500 text-white px-5 py-3 flex items-center justify-between">
             <h3 class="font-black"><i class="fas fa-bolt mr-2"></i>Quản Lý Flash Sale (Admin)</h3>
             <button onclick="document.getElementById('admin-flash-panel').classList.add('hidden')" class="text-white/80 hover:text-white text-lg">&times;</button>
         </div>
         <div class="p-5 space-y-4">
-            <!-- Thời gian kết thúc -->
             <div>
                 <label class="text-sm font-bold text-gray-600 mb-1 block">⏰ Thời gian kết thúc Flash Sale</label>
                 <input type="datetime-local" id="fs-end-time" class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-400 w-full max-w-xs">
             </div>
-
-            <!-- Load gói nạp để chọn -->
             <div>
                 <div class="flex items-center justify-between mb-2">
                     <label class="text-sm font-bold text-gray-600">📦 Chọn Gói Nạp vào Flash Sale</label>
@@ -90,14 +90,12 @@
                     <p class="text-xs text-gray-400 text-center py-4">Nhấn "Tải Gói Nạp" để hiện danh sách</p>
                 </div>
             </div>
-
             <button onclick="saveFlashSaleConfig()" class="w-full bg-red-500 hover:bg-red-600 text-white font-black py-3 rounded-xl text-base shadow-lg shadow-red-500/30">
                 <i class="fas fa-save mr-2"></i>LƯU CẤU HÌNH FLASH SALE
             </button>
         </div>
     </div>
 
-    <!-- FLASH SALE SECTION -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
         <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
             <div class="flex items-center gap-3">
@@ -118,7 +116,6 @@
             </button>
         </div>
 
-        <!-- SLIDER -->
         <div class="flash-sale-wrapper">
             <button class="flash-sale-arrow arrow-left" id="btn-slide-left"><i class="fas fa-chevron-left"></i></button>
             <div class="flash-sale-container" id="flash-sale-list">
@@ -128,7 +125,43 @@
         </div>
     </div>
 
-    <!-- Nạp Game nhanh -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6 relative overflow-hidden">
+        <div class="flex items-center gap-2 mb-4">
+            <i class="fas fa-fire text-red-500 text-xl"></i>
+            <h2 class="text-lg font-black text-gray-800">Các sản phẩm được mua nhiều tại shop</h2>
+        </div>
+        <div id="hot-services-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="col-span-full text-center text-gray-400 py-6 text-sm">Đang tải...</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div onclick="openTab('tai-khoan')" class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-md transition group">
+            <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition"><i class="fas fa-user-shield"></i></div>
+            <h3 class="font-bold text-gray-800">Tài Khoản</h3>
+            <p class="text-xs text-gray-500 mb-2 mt-1 line-clamp-1">Acc VIP, chất lượng cao</p>
+            <span class="text-xs font-bold text-blue-600 mt-2">Xem tất cả ➔</span>
+        </div>
+        <div onclick="openTab('dich-vu')" class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-md transition group">
+            <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition"><i class="fas fa-film"></i></div>
+            <h3 class="font-bold text-gray-800">Dịch Vụ</h3>
+            <p class="text-xs text-gray-500 mb-2 mt-1 line-clamp-1">Netflix, YouTube Premium</p>
+            <span class="text-xs font-bold text-purple-600 mt-2">Xem tất cả ➔</span>
+        </div>
+        <div onclick="openTab('nap-game')" class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-md transition group">
+            <div class="w-14 h-14 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition"><i class="fas fa-gamepad"></i></div>
+            <h3 class="font-bold text-gray-800">Nạp Game</h3>
+            <p class="text-xs text-gray-500 mb-2 mt-1 line-clamp-1">Genshin, Roblox, ZZZ...</p>
+            <span class="text-xs font-bold text-amber-500 mt-2">Xem tất cả ➔</span>
+        </div>
+        <div onclick="openTab('buff-mxh')" class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-md transition group">
+            <div class="w-14 h-14 bg-green-50 text-green-500 rounded-full flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition"><i class="fas fa-chart-line"></i></div>
+            <h3 class="font-bold text-gray-800">Buff MXH</h3>
+            <p class="text-xs text-gray-500 mb-2 mt-1 line-clamp-1">Facebook, TikTok, YT</p>
+            <span class="text-xs font-bold text-green-500 mt-2">Xem tất cả ➔</span>
+        </div>
+    </div>
+
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
         <div class="flex items-center justify-between mb-4">
             <div>
@@ -139,9 +172,31 @@
         </div>
         <div id="home-game-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3"></div>
     </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <div class="flex items-center gap-2 mb-4 border-b border-gray-100 pb-3">
+                <div class="bg-green-100 text-green-600 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fas fa-shopping-bag"></i></div>
+                <h2 class="font-black text-gray-800 text-lg">Đơn hàng gần đây</h2>
+            </div>
+            <div id="recent-orders-list" class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                <div class="text-center text-gray-400 py-6 text-sm">Đang tải...</div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <div class="flex items-center gap-2 mb-4 border-b border-gray-100 pb-3">
+                <div class="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fas fa-wallet"></i></div>
+                <h2 class="font-black text-gray-800 text-lg">Nạp tiền gần đây</h2>
+            </div>
+            <div id="recent-deposits-list" class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                <div class="text-center text-gray-400 py-6 text-sm">Đang tải...</div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<!-- ===== TAB: TÀI KHOẢN ===== -->
 <div id="tab-tai-khoan" class="tab-content">
     <div id="admin-form-tk" class="hidden mb-6 bg-white rounded-xl p-5 border-2 border-blue-300">
         <h3 class="font-black text-blue-700 text-lg mb-4">🛠️ Đăng Sản Phẩm Mới</h3>
@@ -167,7 +222,6 @@
     <div id="grid-tai-khoan" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 </div>
 
-<!-- ===== TAB: DỊCH VỤ ===== -->
 <div id="tab-dich-vu" class="tab-content">
     <div class="flex items-center justify-between mb-4">
         <div><h2 class="text-xl font-black text-gray-800">Dịch Vụ</h2><p class="text-sm text-gray-500">YouTube, Netflix, Cloud Gaming...</p></div>
@@ -175,10 +229,8 @@
     <div id="grid-dich-vu" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 </div>
 
-<!-- ===== TAB: NẠP GAME 3 CẤP ===== -->
 <div id="tab-nap-game" class="tab-content">
 
-    <!-- CẤP 1 -->
     <div id="ng-lv1">
         <div id="admin-ng-lv1" class="hidden mb-5 bg-white rounded-xl p-5 border-2 border-amber-300">
             <h3 class="font-black text-amber-600 mb-4"><i class="fas fa-plus-circle mr-1"></i>Thêm Game Mới</h3>
@@ -201,7 +253,6 @@
         </div>
     </div>
 
-    <!-- CẤP 2 -->
     <div id="ng-lv2" class="hidden">
         <div class="flex items-center gap-3 mb-5">
             <button onclick="ngBack(1)" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"><i class="fas fa-chevron-left"></i> Danh sách game</button>
@@ -232,7 +283,6 @@
         <div id="naptype-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
     </div>
 
-    <!-- CẤP 3 -->
     <div id="ng-lv3" class="hidden">
         <div class="flex items-center gap-3 mb-5 flex-wrap">
             <button onclick="ngBack(1)" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"><i class="fas fa-chevron-left"></i> Game</button>
@@ -245,7 +295,6 @@
         <div class="grid grid-cols-1 lg:grid-cols-10 gap-6 items-start">
             <div class="lg:col-span-7 space-y-5">
 
-                <!-- Admin: Thêm gói + mô tả -->
                 <div id="admin-ng-lv3" class="hidden bg-amber-50 border-2 border-amber-300 rounded-xl p-5 space-y-4">
                     <div>
                         <h4 class="font-black text-amber-700 mb-3"><i class="fas fa-plus-circle mr-1"></i>Thêm Gói Nạp Mới</h4>
@@ -268,7 +317,6 @@
                     </div>
                 </div>
 
-                <!-- Gói nạp -->
                 <div id="pkg-section" class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
                     <div class="border-l-4 border-blue-600 pl-3 mb-4 flex items-center justify-between">
                         <h3 class="font-bold text-lg">Chọn gói nạp</h3>
@@ -279,7 +327,6 @@
                     </div>
                 </div>
 
-                <!-- Form thông tin -->
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
                     <div class="border-l-4 border-blue-600 pl-3 mb-4"><h3 class="font-bold text-lg">Thông tin tài khoản</h3></div>
                     <div id="form-uid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -304,14 +351,12 @@
                     </div>
                 </div>
 
-                <!-- Mô tả -->
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
                     <div class="border-l-4 border-blue-600 pl-3 mb-3"><h3 class="font-bold text-lg">Mô tả dịch vụ</h3></div>
                     <div id="lv3-desc-display" class="text-sm text-gray-600 whitespace-pre-line">Chưa có mô tả.</div>
                 </div>
             </div>
 
-            <!-- STICKY SIDEBAR -->
             <div class="lg:col-span-3 sticky-cart">
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-4">
                     <div class="border-l-4 border-blue-600 pl-3"><h3 class="font-bold text-lg">Thanh toán</h3></div>
@@ -343,7 +388,6 @@
     </div>
 </div>
 
-<!-- ===== TAB: BUFF MXH ===== -->
 <div id="tab-buff-mxh" class="tab-content">
     <h2 class="text-xl font-black text-gray-800 mb-1">Buff Mạng Xã Hội</h2>
     <p class="text-sm text-gray-500 mb-4">Tăng tương tác Facebook, TikTok, YouTube</p>
@@ -377,7 +421,6 @@
     </div>
 </div>
 
-<!-- ===== TAB: HỘP THƯ ADMIN ===== -->
 <div id="tab-admin-inbox" class="tab-content">
     <div class="bg-white rounded-xl shadow-sm overflow-hidden border-2 border-red-200">
         <div class="bg-red-600 text-white px-6 py-4 flex items-center gap-3">
@@ -399,7 +442,6 @@
     </div>
 </div>
 
-<!-- ===== TAB: ACCOUNT ===== -->
 <div id="tab-account" class="tab-content">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
         <div class="bg-white rounded-xl shadow-sm overflow-hidden h-fit">
@@ -484,7 +526,6 @@
 
 </div>
 
-<!-- FOOTER -->
 <footer class="bg-gray-900 text-gray-400 mt-10 py-8 px-4">
     <div class="max-w-6xl mx-auto grid grid-cols-2 gap-6">
         <div>
@@ -504,7 +545,6 @@
     <div class="max-w-6xl mx-auto mt-6 pt-4 border-t border-gray-800 text-center text-sm">© 2026 TN QUANG STORE. All rights reserved.</div>
 </footer>
 
-<!-- MODAL LOGIN -->
 <div id="loginModal" class="modal-overlay">
     <div class="bg-white rounded-2xl p-7 w-full max-w-sm shadow-2xl relative">
         <button onclick="closeModal('loginModal')" class="absolute right-4 top-4 text-gray-400 text-xl hover:text-gray-600">&times;</button>
@@ -516,7 +556,6 @@
     </div>
 </div>
 
-<!-- MODAL MUA SP TỰ ĐỘNG -->
 <div id="autoModal" class="modal-overlay">
     <div class="bg-white rounded-2xl p-7 w-full max-w-sm shadow-2xl relative">
         <button onclick="closeModal('autoModal')" class="absolute right-4 top-4 text-gray-400 text-xl">&times;</button>
@@ -526,7 +565,6 @@
     </div>
 </div>
 
-<!-- MODAL ĐẶT HÀNG OK -->
 <div id="orderOkModal" class="modal-overlay">
     <div class="bg-white rounded-2xl p-7 w-full max-w-sm shadow-2xl relative text-center">
         <button onclick="closeModal('orderOkModal')" class="absolute right-4 top-4 text-gray-400 text-xl">&times;</button>
@@ -553,6 +591,25 @@ let ngGameId=null,ngGameName='',ngTypeId=null,ngTypeName='',ngTypeMode='uid';
 let ngSelPkg=null;
 let fsCountdownInterval=null;
 
+// ===== UTILS FORMATTING =====
+function maskUser(email) {
+    if (!email) return "...khach";
+    let parts = email.split('@');
+    let name = parts[0];
+    if (name.length <= 3) return "..." + name;
+    return "..." + name.slice(-3);
+}
+
+function getTimeAgo(ts) {
+    if(!ts) return "Vừa xong";
+    let past = ts.toDate ? ts.toDate() : new Date(ts);
+    let diff = Math.floor((new Date() - past) / 1000);
+    if(diff < 60) return "Vừa xong";
+    let m = Math.floor(diff/60); if(m < 60) return m + " phút trước";
+    let h = Math.floor(m/60); if(h < 24) return h + " tiếng trước";
+    let d = Math.floor(h/24); return d + " ngày trước";
+}
+
 // ===== MODAL =====
 const openModal=id=>document.getElementById(id).classList.add('open');
 const closeModal=id=>document.getElementById(id).classList.remove('open');
@@ -562,7 +619,14 @@ function openTab(id){
     document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
     const map={'home':'tab-home','tai-khoan':'tab-tai-khoan','dich-vu':'tab-dich-vu','nap-game':'tab-nap-game','buff-mxh':'tab-buff-mxh','admin-inbox':'tab-admin-inbox','account':'tab-account'};
     document.getElementById(map[id]||'tab-home')?.classList.add('active');
-    if(id==='home'){loadFlashSale();loadHomeGameGrid();}
+    
+    // Nạp dữ liệu tự động khi chuyển tab
+    if(id==='home'){
+        loadFlashSale();
+        loadHomeGameGrid();
+        loadHotServices(); // Load SP Hot
+        listenToRecentActivities(); // Load Lịch sử giao dịch Realtime
+    }
     if(id==='tai-khoan') loadProducts('tai-khoan');
     if(id==='dich-vu') loadProducts('dich-vu');
     if(id==='nap-game') loadGameGrid();
@@ -615,8 +679,11 @@ auth.onAuthStateChanged(u=>{
         isAdmin=false;
         area.innerHTML=`<button onclick="openModal('loginModal')" class="bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-800">Đăng nhập</button>`;
     }
+    // Load initial data
     loadFlashSale();
     loadHomeGameGrid();
+    loadHotServices();
+    listenToRecentActivities();
     loadProducts('tai-khoan');
     loadProducts('dich-vu');
     loadGameGrid();
@@ -649,34 +716,26 @@ function checkURLParams(){
     const typeId=params.get('typeId');
     const mode=params.get('mode');
     if(gameId&&typeId&&mode){
-        // Lấy tên game và type từ Firestore rồi navigate
         db.collection("Games").doc(gameId).get().then(gDoc=>{
             if(!gDoc.exists) return;
             const gData=gDoc.data();
             db.collection("Games").doc(gameId).collection("NapTypes").doc(typeId).get().then(tDoc=>{
                 if(!tDoc.exists) return;
                 const tData=tDoc.data();
-                // Mở tab nạp game và đi thẳng vào cấp 3
                 openTab('nap-game');
                 setTimeout(()=>{
                     ngGameId=gameId; ngGameName=gData.ten;
                     ngTypeId=typeId; ngTypeName=tData.ten; ngTypeMode=mode;
-                    // Hiển thị cấp 3
                     document.getElementById('ng-lv1').classList.add('hidden');
                     document.getElementById('ng-lv2').classList.add('hidden');
                     document.getElementById('ng-lv3').classList.remove('hidden');
                     document.getElementById('lv3-bc-game').innerText=gData.ten;
                     document.getElementById('lv3-breadcrumb').innerText=tData.ten;
-                    // Chuyển form theo mode
                     if(mode==='uid'){document.getElementById('form-uid').classList.remove('hidden');document.getElementById('form-log').classList.add('hidden');}
                     else{document.getElementById('form-uid').classList.add('hidden');document.getElementById('form-log').classList.remove('hidden');}
                     if(isAdmin){document.getElementById('btn-ng-lv3-admin')?.classList.remove('hidden');loadAdminDeleteList();}
                     loadPackageGrid();loadDescription();resetCart();
-                    // Cuộn xuống khu vực gói nạp
-                    setTimeout(()=>{
-                        document.getElementById('pkg-section')?.scrollIntoView({behavior:'smooth',block:'start'});
-                    },500);
-                    // Xóa params khỏi URL
+                    setTimeout(()=>{document.getElementById('pkg-section')?.scrollIntoView({behavior:'smooth',block:'start'});},500);
                     window.history.replaceState({},'',window.location.pathname);
                 },300);
             });
@@ -685,10 +744,105 @@ function checkURLParams(){
 }
 
 // ===========================
+// ===== AUTO REALTIME HOME JS =====
+// ===========================
+
+// 1. Load Hot Services
+function loadHotServices() {
+    const c = document.getElementById('hot-services-list');
+    if(!c) return;
+    db.collection("SanPhamV2").where("loai", "==", "dich-vu").limit(8).onSnapshot(snap => {
+        if(snap.empty) { c.innerHTML = '<div class="col-span-4 text-center text-gray-400 py-6 text-sm">Chưa có sản phẩm</div>'; return; }
+        c.innerHTML = '';
+        snap.forEach(doc => {
+            const d = doc.data();
+            c.innerHTML += `
+            <div class="border border-gray-200 rounded-xl p-3 flex items-center gap-3 bg-white hover:shadow-md hover:border-red-200 cursor-pointer transition group" onclick="openTab('dich-vu')">
+                <img src="${d.anh||'https://via.placeholder.com/60'}" class="w-12 h-12 object-cover rounded-lg group-hover:scale-105 transition" onerror="this.src='https://via.placeholder.com/60'">
+                <div>
+                    <div class="text-xs font-bold text-gray-800 line-clamp-2 group-hover:text-red-500 transition">${d.ten}</div>
+                    <div class="text-sm font-black text-red-600 mt-1">${Number(d.gia).toLocaleString()}đ</div>
+                </div>
+            </div>`;
+        });
+    });
+}
+
+// 2. Load Recent Activities (Đơn hàng & Nạp tiền)
+let isListeningRecent = false;
+function listenToRecentActivities() {
+    if(isListeningRecent) return; 
+    isListeningRecent = true;
+
+    // Đơn hàng gần đây (Tất cả category từ collection orders)
+    try {
+        db.collection("orders").orderBy("ngay", "desc").limit(10).onSnapshot(snap => {
+            const c = document.getElementById('recent-orders-list');
+            if(!c) return;
+            if(snap.empty) { c.innerHTML = '<div class="text-center text-gray-400 py-6 text-sm">Chưa có đơn hàng</div>'; return; }
+            c.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                const masked = maskUser(d.email);
+                const timeStr = getTimeAgo(d.ngay);
+                const itemName = d.category==='nap-game' ? d.pkgName : (d.tenSP || d.buffType || 'Sản phẩm');
+                const price = d.totalPrice || d.gia || 0;
+                
+                c.innerHTML += `
+                <div class="flex items-center justify-between border-b border-gray-50 pb-3 last:border-0 last:pb-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-green-50 text-green-500 flex items-center justify-center text-xs flex-shrink-0"><i class="fas fa-shopping-bag"></i></div>
+                        <div>
+                            <div class="text-sm text-gray-700 line-clamp-1"><span class="font-bold text-green-600">${masked}</span> mua 1 ${itemName}</div>
+                            <div class="text-xs text-gray-400 md:hidden">${timeStr}</div>
+                        </div>
+                    </div>
+                    <div class="text-right flex-shrink-0 ml-2">
+                        <div class="text-sm font-bold text-blue-700">${Number(price).toLocaleString()}đ</div>
+                        <div class="text-xs text-gray-400 hidden md:block">${timeStr}</div>
+                    </div>
+                </div>`;
+            });
+        });
+    } catch(e) { console.log(e); }
+
+    // Nạp tiền gần đây (Từ bảng GiaoDich có loai = 'cong')
+    try {
+        db.collection("GiaoDich").where("loai", "==", "cong").orderBy("thoiGian", "desc").limit(10).onSnapshot(snap => {
+            const c = document.getElementById('recent-deposits-list');
+            if(!c) return;
+            if(snap.empty) { c.innerHTML = '<div class="text-center text-gray-400 py-6 text-sm">Chưa có giao dịch nạp tiền</div>'; return; }
+            c.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                const masked = maskUser(d.email);
+                const timeStr = getTimeAgo(d.thoiGian);
+                // Regex hoặc tìm chữ "Thẻ" để phân biệt
+                const via = (d.moTa && d.moTa.toLowerCase().includes('thẻ')) ? 'Thẻ cào' : 'Ngân hàng';
+                
+                c.innerHTML += `
+                <div class="flex items-center justify-between border-b border-gray-50 pb-3 last:border-0 last:pb-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xs flex-shrink-0"><i class="fas fa-money-bill-wave"></i></div>
+                        <div>
+                            <div class="text-sm text-gray-700 line-clamp-1"><span class="font-bold text-blue-600">${masked}</span> nạp tiền qua ${via}</div>
+                            <div class="text-xs text-gray-400 md:hidden">${timeStr}</div>
+                        </div>
+                    </div>
+                    <div class="text-right flex-shrink-0 ml-2">
+                        <div class="text-sm font-bold text-green-600">+${Number(d.soTien||0).toLocaleString()}đ</div>
+                        <div class="text-xs text-gray-400 hidden md:block">${timeStr}</div>
+                    </div>
+                </div>`;
+            });
+        });
+    } catch(e) { console.log("Cần tạo index cho GiaoDich", e); }
+}
+
+// ===========================
 // ===== FLASH SALE =====
 // ===========================
 
-// --- Slider logic ---
 const fsContainer=document.getElementById('flash-sale-list');
 const btnLeft=document.getElementById('btn-slide-left');
 const btnRight=document.getElementById('btn-slide-right');
@@ -706,7 +860,6 @@ btnLeft?.addEventListener('click',()=>{fsContainer.scrollLeft-=200;});
 btnRight?.addEventListener('click',()=>{fsContainer.scrollLeft+=200;});
 window.addEventListener('resize',checkArrowsVisibility);
 
-// --- Navigate từ Flash Sale card ---
 function goToGameDetail(gameId,typeId,isLog){
     const mode=isLog?'log':'uid';
     const url=`?gameId=${gameId}&typeId=${typeId}&mode=${mode}`;
@@ -714,7 +867,6 @@ function goToGameDetail(gameId,typeId,isLog){
     checkURLParams();
 }
 
-// --- Load Flash Sale ---
 async function loadFlashSale(){
     const list=document.getElementById('flash-sale-list');
     if(!list) return;
@@ -722,7 +874,6 @@ async function loadFlashSale(){
         const snap=await db.collection("settings").doc("flash_sale_config").get();
         if(!snap.exists){list.innerHTML='<div class="text-center text-gray-400 text-sm py-6 w-full">Chưa có Flash Sale</div>';checkArrowsVisibility();return;}
         const data=snap.data();
-        // Khởi động countdown
         if(data.endTime) startCountdown(new Date(data.endTime).getTime());
         const items=data.items||[];
         if(!items.length){list.innerHTML='<div class="text-center text-gray-400 text-sm py-6 w-full">Chưa có sản phẩm Flash Sale</div>';checkArrowsVisibility();return;}
@@ -743,7 +894,6 @@ async function loadFlashSale(){
     }catch(e){list.innerHTML='<div class="text-center text-gray-400 text-sm py-6 w-full">Lỗi tải Flash Sale</div>';}
 }
 
-// --- Countdown ---
 function startCountdown(endTimestamp){
     if(fsCountdownInterval) clearInterval(fsCountdownInterval);
     const tick=()=>{
@@ -766,7 +916,6 @@ function startCountdown(endTimestamp){
     fsCountdownInterval=setInterval(tick,1000);
 }
 
-// --- Load tất cả gói nạp để Admin chọn ---
 async function loadAllPackagesForAdmin(){
     const c=document.getElementById('fs-pkg-list');
     c.innerHTML='<div class="text-center text-gray-400 text-sm py-4">Đang quét tất cả gói nạp...</div>';
@@ -782,7 +931,6 @@ async function loadAllPackagesForAdmin(){
                 const isLog=tData.mode==='log';
                 const pkgsSnap=await db.collection("Games").doc(gDoc.id).collection("NapTypes").doc(tDoc.id).collection("Packages").orderBy("ngay","asc").get();
                 if(pkgsSnap.empty) continue;
-                // Header nhóm
                 c.innerHTML+=`<div class="text-xs font-black text-gray-500 uppercase mt-3 mb-1 px-1">${gData.ten} → ${tData.ten}</div>`;
                 pkgsSnap.forEach(pDoc=>{
                     const pData=pDoc.data();
@@ -813,12 +961,10 @@ async function loadAllPackagesForAdmin(){
     }catch(e){c.innerHTML=`<div class="text-center text-gray-400 text-sm py-4">Lỗi tải dữ liệu: ${e.message}</div>`;}
 }
 
-// --- Lưu Flash Sale ---
 async function saveFlashSaleConfig(){
     const endTimeInput=document.getElementById('fs-end-time').value;
     if(!endTimeInput) return alert("Chọn thời gian kết thúc Flash Sale!");
     const endTime=new Date(endTimeInput).toISOString();
-    // Thu thập checkbox đã chọn
     const checked=document.querySelectorAll('#fs-pkg-list input[type="checkbox"]:checked');
     if(!checked.length) return alert("Chọn ít nhất 1 gói nạp!");
     const selectedPackagesArray=[];
@@ -843,7 +989,6 @@ async function saveFlashSaleConfig(){
     }catch(e){alert("❌ Lỗi lưu: "+e.message);}
 }
 
-// --- Trang chủ: Grid game nhỏ ---
 function loadHomeGameGrid(){
     const g=document.getElementById('home-game-grid');
     if(!g) return;

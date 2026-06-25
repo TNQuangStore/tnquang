@@ -4222,6 +4222,148 @@
             // Auto cleanup notifications on load
             setTimeout(runNotifCleanup, 5000);
         });
+        // ===== SỬA LỖI NAVIGATION & SỰ KIỆN =====
+// Ghi đè các hàm để đảm bảo không bị lỗi
+window.openTab = function(id) {
+    try {
+        console.log('openTab:', id);
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        const t = document.getElementById('tab-' + id);
+        if (t) t.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        closeNP();
+        const mp = { home: 'mb-home', 'tai-khoan': 'mb-tk', 'dich-vu': 'mb-dv', 'nap-game': 'mb-ng', 'buff-mxh': 'mb-buff', account: 'mb-acc' };
+        document.querySelectorAll('.mbn').forEach(el => el.classList.remove('active'));
+        const mb = document.getElementById(mp[id]);
+        if (mb) mb.classList.add('active');
+    } catch (e) {
+        console.error('openTab error:', e);
+        toast('Lỗi điều hướng, vui lòng thử lại.', 'error');
+    }
+};
+
+window.toggleNP = function() {
+    try {
+        document.getElementById('np').classList.toggle('open');
+    } catch (e) { console.error('toggleNP error:', e); }
+};
+window.closeNP = function() {
+    try {
+        document.getElementById('np').classList.remove('open');
+    } catch (e) {}
+};
+
+window.openM = function(id) {
+    try {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('open');
+    } catch (e) { console.error('openM error:', e); }
+};
+window.closeMA = function(id) {
+    try {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add('closing');
+        setTimeout(() => { el.classList.remove('open', 'closing'); }, 260);
+    } catch (e) { console.error('closeMA error:', e); }
+};
+
+window.showSub = function(id) {
+    try {
+        document.querySelectorAll('.sub-page').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.sidebar-lnk').forEach(el => el.classList.remove('active'));
+        const t = document.getElementById('sub-' + id);
+        if (t) t.classList.add('active');
+        // An toàn với event
+        if (window.event && window.event.currentTarget) {
+            window.event.currentTarget.classList.add('active');
+        }
+    } catch (e) { console.error('showSub error:', e); }
+};
+window.showSub2 = function(id) {
+    try {
+        document.querySelectorAll('.sub-page').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.sidebar-lnk').forEach(el => el.classList.remove('active'));
+        const t = document.getElementById('sub-' + id);
+        if (t) t.classList.add('active');
+        document.querySelectorAll('.sidebar-lnk').forEach(b => {
+            if ((b.getAttribute('onclick') || '').includes(`'${id}'`)) {
+                b.classList.add('active');
+            }
+        });
+    } catch (e) { console.error('showSub2 error:', e); }
+};
+
+// Sửa lỗi các hàm giao dịch
+const _origBuy = window.buyOL2;
+window.buyOL2 = async function(pid) {
+    try {
+        if (!U) { openM('loginModal'); return; }
+        await _origBuy(pid);
+    } catch (e) {
+        console.error('buyOL2 error:', e);
+        toast('Lỗi mua hàng: ' + e.message, 'error');
+    }
+};
+
+const _origSubmitGame = window.submitGame;
+window.submitGame = async function() {
+    try {
+        if (!U) { openM('loginModal'); return; }
+        await _origSubmitGame();
+    } catch (e) {
+        console.error('submitGame error:', e);
+        toast('Lỗi nạp game: ' + e.message, 'error');
+    }
+};
+
+const _origSubmitBuff = window.submitBuff;
+window.submitBuff = async function() {
+    try {
+        if (!U) { openM('loginModal'); return; }
+        await _origSubmitBuff();
+    } catch (e) {
+        console.error('submitBuff error:', e);
+        toast('Lỗi buff: ' + e.message, 'error');
+    }
+};
+
+// Bọc auth.onAuthStateChanged để tránh lỗi treo
+const _origOnAuth = auth.onAuthStateChanged;
+auth.onAuthStateChanged = function(callback) {
+    return _origOnAuth.call(auth, async (u) => {
+        try {
+            await callback(u);
+        } catch (e) {
+            console.error('Auth callback error:', e);
+            toast('Lỗi xác thực: ' + e.message, 'error');
+        }
+    });
+};
+
+// Bọc DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        // Gọi lại init nếu chưa chạy
+        if (typeof initHome === 'function') initHome();
+        if (typeof renderRV === 'function') renderRV();
+        if (typeof renderBuffAdminPFSel === 'function') renderBuffAdminPFSel();
+        if (typeof renderBuffPFList === 'function') renderBuffPFList();
+        if (typeof loadBuffCats === 'function') loadBuffCats();
+        if (typeof loadBuffSt === 'function') loadBuffSt();
+        // Kích hoạt sub mặc định
+        const sub = document.getElementById('sub-thong-tin');
+        if (sub) sub.classList.add('active');
+        const lnk = document.querySelector('.sidebar-lnk');
+        if (lnk) lnk.classList.add('active');
+        if (typeof swInbox === 'function') swInbox('nap-game');
+        setTimeout(() => { if (typeof chkFSArr === 'function') chkFSArr(); }, 500);
+        setTimeout(() => { if (typeof runNotifCleanup === 'function') runNotifCleanup(); }, 5000);
+    } catch (e) {
+        console.error('DOMContentLoaded error:', e);
+        toast('Lỗi khởi tạo, vui lòng tải lại trang.', 'error');
+    }
+});
     </script>
 </body>
 </html>

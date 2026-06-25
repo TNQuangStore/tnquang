@@ -4364,6 +4364,61 @@ document.addEventListener('DOMContentLoaded', function() {
         toast('Lỗi khởi tạo, vui lòng tải lại trang.', 'error');
     }
 });
+        // ===== SỬA LẠI RENDER GAME & DANH MỤC DỊCH VỤ (THÊM NÚT XÓA) =====
+// Ghi đè hàm initHome để đảm bảo nút xóa hiển thị
+const _origInitHome = window.initHome || function(){};
+window.initHome = function() {
+    // Gọi hàm cũ nếu có
+    if (typeof _origInitHome === 'function') _origInitHome();
+    
+    // Đăng ký lại listener cho Games với nút xóa rõ ràng
+    db.collection('Games').orderBy('ngay','desc').onSnapshot(snap => {
+        const hg = document.getElementById('home-games');
+        const gg = document.getElementById('game-grid');
+        if (!hg && !gg) return;
+        let html = '';
+        snap.forEach(doc => {
+            const g = doc.data();
+            const isAdmin = (typeof isA !== 'undefined' && isA);
+            html += `<div onclick="ngToLv2('${doc.id}','${g.ten.replace(/'/g,"\\'").replace(/\\/g,"\\\\")}')" class="ccard bg-white rounded-2xl p-3 border border-slate-100 shadow-sm text-center cursor-pointer group">
+                <img src="${g.anh||'https://via.placeholder.com/80'}" class="w-12 h-12 object-contain mx-auto mb-2 rounded-xl group-hover:scale-105 transition" onerror="this.src='https://via.placeholder.com/80'">
+                <p class="text-[11px] font-black text-slate-800 line-clamp-1 group-hover:text-blue-700 transition">${g.ten}</p>
+                ${isAdmin ? `<button onclick="event.stopPropagation();delGame('${doc.id}')" class="mt-1.5 w-full bg-red-50 hover:bg-red-100 text-red-500 py-1 rounded-lg text-[10px] font-bold border border-dashed border-red-200 transition active:scale-95 hover:scale-105"><i class="fas fa-trash-alt mr-0.5"></i>Xóa</button>` : ''}
+            </div>`;
+        });
+        if (hg) hg.innerHTML = html || '<p class="col-span-full text-center text-slate-400 py-6 text-xs">Không có tựa game nào.</p>';
+        if (gg) gg.innerHTML = html || '<p class="col-span-full text-center text-slate-400 py-6 text-xs">Không có tựa game nào.</p>';
+    });
+
+    // Đăng ký lại listener cho Danh mục Dịch vụ
+    db.collection('DanhMucDV').orderBy('ngay','asc').onSnapshot(snap => {
+        const grid = document.getElementById('dv-cat-grid');
+        if (!grid) return;
+        let html = '';
+        snap.forEach(doc => {
+            const d = doc.data();
+            const isAdmin = (typeof isA !== 'undefined' && isA);
+            html += `<div onclick="openDVLv1('${doc.id}','${d.ten.replace(/'/g,"\\'").replace(/\\/g,"\\\\")}')" class="ccard bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm cursor-pointer group">
+                <div class="relative"><img src="${d.anh||'https://via.placeholder.com/200x130'}" class="w-full h-28 object-cover group-hover:scale-105 transition" onerror="this.src='https://via.placeholder.com/200x130'">
+                ${isAdmin ? `<button onclick="event.stopPropagation();delDVCat('${doc.id}')" class="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition active:scale-90"><i class="fas fa-trash-alt"></i></button>` : ''}
+                </div>
+                <div class="p-3 text-center"><p class="text-xs font-black text-slate-800 group-hover:text-blue-700 transition uppercase tracking-wide">${d.ten}</p></div>
+            </div>`;
+        });
+        grid.innerHTML = html || '<p class="col-span-full text-center text-slate-400 py-8 text-xs">Chưa có danh mục dịch vụ nào. Admin hãy thêm danh mục!</p>';
+    });
+};
+
+// Đảm bảo gọi initHome sau khi đăng nhập để isA cập nhật
+auth.onAuthStateChanged(async u => {
+    // ... giữ nguyên logic cũ, nhưng thêm dòng này ở cuối:
+    if (u) {
+        // Sau khi set isA, gọi lại initHome để refresh
+        setTimeout(() => {
+            if (typeof initHome === 'function') initHome();
+        }, 500);
+    }
+});
     </script>
 </body>
 </html>

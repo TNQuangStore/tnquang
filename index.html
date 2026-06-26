@@ -4532,22 +4532,79 @@ window.delDVCat = async function(id) {
 
 // Chạy mỗi 3 giây để đảm bảo luôn có (dự phòng)
 setInterval(forceDeleteButtons, 3000);
-  // ================================================
-// ===== SỬA LỖI NÚT XÓA BIẾN MẤT (FIX CỨNG) =====
-// ================================================
+  // ================================================================
+// ===== BẢN SỬA LỖI TỔNG HỢP - DÁN VÀO CUỐI FILE =====
+// ================================================================
 
-// 1. Lưu lại hàm initHome gốc
-const _originalInitHome = window.initHome;
-
-// 2. Ghi đè initHome để thêm nút xóa ngay khi render
-window.initHome = function() {
-    // Gọi hàm gốc (nếu có)
-    if (typeof _originalInitHome === 'function') {
-        _originalInitHome();
+// 1. SỬA LỖI NAVIGATION (không bị đóng băng)
+window.openTab = function(id) {
+    try {
+        console.log('openTab:', id);
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        const t = document.getElementById('tab-' + id);
+        if (t) t.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        closeNP();
+        const mp = { home: 'mb-home', 'tai-khoan': 'mb-tk', 'dich-vu': 'mb-dv', 'nap-game': 'mb-ng', 'buff-mxh': 'mb-buff', account: 'mb-acc' };
+        document.querySelectorAll('.mbn').forEach(el => el.classList.remove('active'));
+        const mb = document.getElementById(mp[id]);
+        if (mb) mb.classList.add('active');
+    } catch (e) {
+        console.error('openTab error:', e);
+        toast('Lỗi điều hướng, vui lòng thử lại.', 'error');
     }
+};
 
-    // Đăng ký lại listener cho Games (để có nút xóa)
-    db.collection('Games').orderBy('ngay', 'desc').onSnapshot(snap => {
+window.toggleNP = function() {
+    try { document.getElementById('np').classList.toggle('open'); } catch (e) { console.error(e); }
+};
+window.closeNP = function() {
+    try { document.getElementById('np').classList.remove('open'); } catch (e) {}
+};
+window.openM = function(id) {
+    try { document.getElementById(id).classList.add('open'); } catch (e) { console.error(e); }
+};
+window.closeMA = function(id) {
+    try {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add('closing');
+        setTimeout(() => { el.classList.remove('open', 'closing'); }, 260);
+    } catch (e) { console.error(e); }
+};
+window.showSub = function(id) {
+    try {
+        document.querySelectorAll('.sub-page').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.sidebar-lnk').forEach(el => el.classList.remove('active'));
+        const t = document.getElementById('sub-' + id);
+        if (t) t.classList.add('active');
+        if (window.event && window.event.currentTarget) {
+            window.event.currentTarget.classList.add('active');
+        }
+    } catch (e) { console.error('showSub error:', e); }
+};
+window.showSub2 = function(id) {
+    try {
+        document.querySelectorAll('.sub-page').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.sidebar-lnk').forEach(el => el.classList.remove('active'));
+        const t = document.getElementById('sub-' + id);
+        if (t) t.classList.add('active');
+        document.querySelectorAll('.sidebar-lnk').forEach(b => {
+            if ((b.getAttribute('onclick') || '').includes(`'${id}'`)) {
+                b.classList.add('active');
+            }
+        });
+    } catch (e) { console.error('showSub2 error:', e); }
+};
+
+// 2. SỬA LỖI NÚT XÓA (xuất hiện khi admin, không mất khi chuyển tab)
+// Ghi đè hàm initHome để thêm nút xóa ngay khi render
+const _origInitHome = window.initHome || function(){};
+window.initHome = function() {
+    if (typeof _origInitHome === 'function') _origInitHome();
+
+    // Listener Games
+    db.collection('Games').orderBy('ngay','desc').onSnapshot(snap => {
         const hg = document.getElementById('home-games');
         const gg = document.getElementById('game-grid');
         const isAdmin = typeof isA !== 'undefined' && isA;
@@ -4565,8 +4622,8 @@ window.initHome = function() {
         if (gg) gg.innerHTML = html || emptyMsg;
     });
 
-    // Đăng ký lại listener cho Danh mục Dịch vụ
-    db.collection('DanhMucDV').orderBy('ngay', 'asc').onSnapshot(snap => {
+    // Listener Danh mục Dịch vụ
+    db.collection('DanhMucDV').orderBy('ngay','asc').onSnapshot(snap => {
         const grid = document.getElementById('dv-cat-grid');
         if (!grid) return;
         const isAdmin = typeof isA !== 'undefined' && isA;
@@ -4585,7 +4642,19 @@ window.initHome = function() {
     });
 };
 
-// 3. Gọi lại initHome khi auth thay đổi (đăng nhập/đăng xuất)
+// 3. TỰ ĐỘNG REFRESH KHI CHUYỂN TAB
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        setTimeout(() => {
+            if (typeof initHome === 'function') {
+                initHome();
+                console.log('🔄 Refresh giao diện sau khi chuyển tab');
+            }
+        }, 300);
+    }
+});
+
+// 4. GỌI INITHOME KHI AUTH THAY ĐỔI
 const _origOnAuth = auth.onAuthStateChanged;
 auth.onAuthStateChanged = function(callback) {
     return _origOnAuth.call(auth, async (u) => {
@@ -4594,7 +4663,6 @@ auth.onAuthStateChanged = function(callback) {
         } catch (e) {
             console.error('Auth callback error:', e);
         }
-        // Sau khi auth thay đổi, gọi lại initHome để cập nhật nút xóa
         if (u) {
             setTimeout(() => {
                 if (typeof window.initHome === 'function') {
@@ -4605,15 +4673,14 @@ auth.onAuthStateChanged = function(callback) {
     });
 };
 
-// 4. Gọi initHome ngay khi trang tải xong (nếu đã đăng nhập)
+// 5. GỌI INITHOME KHI DOM TẢI XONG
 document.addEventListener('DOMContentLoaded', function() {
-    // Đợi auth load xong
     setTimeout(() => {
         if (typeof window.initHome === 'function') {
             window.initHome();
         }
     }, 500);
-});      
+});
     </script>                            
 </body>
 </html>

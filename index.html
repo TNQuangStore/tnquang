@@ -4596,6 +4596,280 @@ window.showSub2 = function(id) {
         });
     } catch (e) { console.error('showSub2 error:', e); }
 };
+       // ======================================================
+// ===== BẢN VÁ BỔ SUNG - THÊM ẢNH CHO GÓI NẠP =====
+// ======================================================
+
+(function() {
+    console.log('🚀 Đang áp dụng bản vá bổ sung...');
+
+    // ----- 1. SỬA LẠI HÀM addPkg (thêm URL ảnh) -----
+    const oldAddPkg = window.addPkg;
+    window.addPkg = async function() {
+        if (!isA || !ngGid || !ngTid) return;
+        const n = document.getElementById('pkg-name')?.value.trim();
+        const p = document.getElementById('pkg-price')?.value.trim();
+        // Lấy giá trị từ input ảnh (nếu có)
+        const img = document.getElementById('pkg-image')?.value.trim() || '';
+        if (!n || !p) { toast('Vui lòng nhập tên và giá gói!', 'error'); return; }
+        try {
+            await db.collection('Games').doc(ngGid).collection('NapTypes').doc(ngTid).collection('Packages').add({
+                ten: n,
+                gia: Number(p),
+                anh: img,
+                ngay: TS()
+            });
+            document.getElementById('pkg-name').value = '';
+            document.getElementById('pkg-price').value = '';
+            if (document.getElementById('pkg-image')) document.getElementById('pkg-image').value = '';
+            toast('✅ Thêm gói nạp thành công!', 'success');
+        } catch (e) {
+            toast('Lỗi: ' + e.message, 'error');
+        }
+    };
+
+    // ----- 2. THÊM INPUT URL ẢNH VÀO GIAO DIỆN -----
+    function addImageInput() {
+        const adminPanel = document.getElementById('ng-admin3');
+        if (!adminPanel) return;
+        // Kiểm tra đã có input ảnh chưa
+        if (document.getElementById('pkg-image')) return;
+        
+        const grid = adminPanel.querySelector('.grid');
+        if (!grid) return;
+        
+        // Tạo input ảnh
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'pkg-image';
+        input.placeholder = 'URL ảnh (tuỳ chọn)';
+        input.className = 'border border-slate-200 bg-white rounded-xl p-2.5 text-xs font-semibold outline-none';
+        
+        // Thêm vào grid
+        grid.appendChild(input);
+        console.log('✅ Đã thêm input URL ảnh');
+    }
+
+    // ----- 3. SỬA HÀM ngToLv3 để hiển thị ảnh -----
+    const oldNgToLv3 = window.ngToLv3;
+    window.ngToLv3 = function(tid, tname, tmode) {
+        // Gọi hàm cũ trước
+        if (typeof oldNgToLv3 === 'function') {
+            oldNgToLv3(tid, tname, tmode);
+        }
+        
+        // Đợi danh sách render xong rồi thêm ảnh
+        setTimeout(() => {
+            const pkgList = document.getElementById('pkg-list');
+            if (!pkgList) return;
+            
+            // Lắng nghe sự thay đổi của danh sách gói
+            const observer = new MutationObserver(() => {
+                renderPkgImages();
+            });
+            observer.observe(pkgList, { childList: true, subtree: true });
+            
+            // Render lần đầu
+            renderPkgImages();
+        }, 300);
+    };
+
+    // Hàm render ảnh cho từng gói
+    function renderPkgImages() {
+        document.querySelectorAll('#pkg-list .border-2').forEach(el => {
+            // Nếu đã có ảnh rồi thì bỏ qua
+            if (el.querySelector('.pkg-image-display')) return;
+            
+            // Lấy dữ liệu từ Firestore (cần tìm lại)
+            const pkgId = el.id.replace('pc-', '');
+            if (!pkgId) return;
+            
+            // Tìm document trong Firestore để lấy URL ảnh
+            db.collection('Games').doc(ngGid).collection('NapTypes').doc(ngTid).collection('Packages').doc(pkgId).get()
+                .then(snap => {
+                    if (!snap.exists) return;
+                    const data = snap.data();
+                    if (data.anh) {
+                        const firstDiv = el.querySelector('.flex.items-center');
+                        if (firstDiv) {
+                            const img = document.createElement('img');
+                            img.src = data.anh;
+                            img.className = 'pkg-image-display w-8 h-8 object-contain rounded-lg mr-2';
+                            img.onerror = function() { this.style.display = 'none'; };
+                            firstDiv.insertBefore(img, firstDiv.firstChild);
+                        }
+                    }
+                })
+                .catch(() => {});
+        });
+    }
+
+    // ----- 4. KÍCH HOẠT -----
+    // Chạy sau khi DOM load
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(addImageInput, 500);
+        setTimeout(() => {
+            if (typeof window.ngToLv3 === 'function') {
+                // Chạy lại hàm hiện tại nếu đang ở level 3
+                if (document.getElementById('ng-lv3') && !document.getElementById('ng-lv3').classList.contains('hidden')) {
+                    if (ngTid) {
+                        const old = window.ngToLv3;
+                        window.ngToLv3(ngTid, ngTn, ngTm);
+                    }
+                }
+            }
+        }, 600);
+    });
+
+    // Chạy khi vào tab nạp game
+    const origNgToLv2 = window.ngToLv2;
+    window.ngToLv2 = function(gid, gname) {
+        if (typeof origNgToLv2 === 'function') origNgToLv2(gid, gname);
+        setTimeout(addImageInput, 500);
+    };
+
+    console.log('✅ Bản vá bổ sung đã sẵn sàng!');
+})();
+
+// ======================================================
+// ===== SỬA LỖI NAVIGATION & NÚT XÓA (TỐI GIẢN) =====
+// ======================================================
+
+(function() {
+    console.log('🔧 Đang sửa lỗi navigation và nút xóa...');
+
+    // ----- SỬA LỖI NAVIGATION -----
+    if (typeof window.openTab === 'function') {
+        const oldOpenTab = window.openTab;
+        window.openTab = function(id) {
+            try {
+                console.log('📌 openTab:', id);
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                const target = document.getElementById('tab-' + id);
+                if (target) target.classList.add('active');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                if (typeof closeNP === 'function') closeNP();
+                const mp = { home: 'mb-home', 'tai-khoan': 'mb-tk', 'dich-vu': 'mb-dv', 'nap-game': 'mb-ng', 'buff-mxh': 'mb-buff', account: 'mb-acc' };
+                document.querySelectorAll('.mbn').forEach(el => el.classList.remove('active'));
+                const mb = document.getElementById(mp[id]);
+                if (mb) mb.classList.add('active');
+            } catch (e) {
+                console.error('openTab error:', e);
+                toast('Lỗi điều hướng, vui lòng thử lại.', 'error');
+            }
+        };
+    }
+
+    // Gắn sự kiện click
+    function attachEvents() {
+        document.querySelectorAll('[onclick*="openTab"]').forEach(el => {
+            const match = el.getAttribute('onclick').match(/openTab\s*\(\s*['"]([^'"]+)['"]/);
+            if (match) {
+                const tabId = match[1];
+                el.removeAttribute('onclick');
+                el.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.openTab(tabId);
+                });
+            }
+        });
+        document.querySelectorAll('.mbn').forEach(el => {
+            if (el._navFixed) return;
+            const tabId = el.id.replace('mb-', '');
+            if (tabId && tabId !== '') {
+                el.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.openTab(tabId);
+                });
+                el._navFixed = true;
+            }
+        });
+    }
+
+    // ----- NÚT XÓA CỐ ĐỊNH -----
+    function fixDeleteButtons() {
+        const isAdmin = (typeof isA !== 'undefined' && isA);
+        if (!isAdmin) {
+            document.querySelectorAll('.del-game-btn, .del-cat-btn').forEach(el => el.remove());
+            return;
+        }
+
+        // Game
+        document.querySelectorAll('#game-grid .ccard, #home-games .ccard').forEach(el => {
+            const onclickAttr = el.querySelector('[onclick*="ngToLv2"]')?.getAttribute('onclick') || '';
+            const match = onclickAttr.match(/ngToLv2\s*\(\s*['"]([^'"]+)['"]/);
+            const gameId = match ? match[1] : el.dataset.gameId;
+            if (!gameId || el.querySelector('.del-game-btn')) return;
+            const btn = document.createElement('button');
+            btn.className = 'mt-1.5 w-full bg-red-50 hover:bg-red-100 text-red-500 py-1 rounded-lg text-[10px] font-bold border border-dashed border-red-200 transition del-game-btn';
+            btn.innerHTML = '<i class="fas fa-trash-alt mr-0.5"></i>Xóa';
+            btn.onclick = function(e) {
+                e.stopPropagation();
+                if (confirm('Xóa game này?')) {
+                    db.collection('Games').doc(gameId).delete()
+                        .then(() => toast('✅ Đã xóa game!', 'success'))
+                        .catch(err => toast('Lỗi: ' + err.message, 'error'));
+                }
+            };
+            el.appendChild(btn);
+        });
+
+        // Danh mục
+        document.querySelectorAll('#dv-cat-grid .ccard').forEach(el => {
+            const onclickAttr = el.querySelector('[onclick*="openDVLv1"]')?.getAttribute('onclick') || '';
+            const match = onclickAttr.match(/openDVLv1\s*\(\s*['"]([^'"]+)['"]/);
+            const catId = match ? match[1] : el.dataset.catId;
+            if (!catId || el.querySelector('.del-cat-btn')) return;
+            const imgDiv = el.querySelector('.relative');
+            if (!imgDiv) return;
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition del-cat-btn z-10';
+            btn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            btn.onclick = function(e) {
+                e.stopPropagation();
+                if (confirm('Xóa danh mục này?')) {
+                    db.collection('DanhMucDV').doc(catId).delete()
+                        .then(() => toast('✅ Đã xóa danh mục!', 'success'))
+                        .catch(err => toast('Lỗi: ' + err.message, 'error'));
+                }
+            };
+            imgDiv.appendChild(btn);
+        });
+    }
+
+    // ----- KÍCH HOẠT -----
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(attachEvents, 300);
+        setTimeout(fixDeleteButtons, 500);
+    });
+
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) setTimeout(fixDeleteButtons, 300);
+    });
+
+    auth.onAuthStateChanged(function() {
+        setTimeout(fixDeleteButtons, 500);
+        setTimeout(attachEvents, 600);
+    });
+
+    // Ghi đè addGame và addDVCat
+    const _origAddGame = window.addGame;
+    window.addGame = async function() {
+        await _origAddGame?.();
+        setTimeout(fixDeleteButtons, 600);
+    };
+    const _origAddDVCat = window.addDVCat;
+    window.addDVCat = async function() {
+        await _origAddDVCat?.();
+        setTimeout(fixDeleteButtons, 600);
+    };
+
+    setInterval(fixDeleteButtons, 5000);
+
+    console.log('✅ Đã sửa lỗi navigation và nút xóa!');
+})(); 
 
 
     </script>                            

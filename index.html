@@ -4681,6 +4681,127 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 500);
 });
+        // ============================================================
+// ===== HỆ THỐNG NAVIGATION MỚI - HOẠT ĐỘNG ĐỘC LẬP =====
+// ============================================================
+(function() {
+    console.log('🚀 Khởi tạo hệ thống navigation mới...');
+
+    // Bảng ánh xạ tab ID -> element ID
+    const tabMap = {
+        home: 'tab-home',
+        'tai-khoan': 'tab-tai-khoan',
+        'dich-vu': 'tab-dich-vu',
+        'nap-game': 'tab-nap-game',
+        'buff-mxh': 'tab-buff-mxh',
+        account: 'tab-account',
+        'admin-inbox': 'tab-admin-inbox'
+    };
+
+    // Bảng ánh xạ mobile menu ID
+    const mobileMap = {
+        home: 'mb-home',
+        'tai-khoan': 'mb-tk',
+        'dich-vu': 'mb-dv',
+        'nap-game': 'mb-ng',
+        'buff-mxh': 'mb-buff',
+        account: 'mb-acc'
+    };
+
+    // Hàm chuyển tab CHÍNH
+    window.navigateTo = function(tabId) {
+        try {
+            console.log('📌 Đang chuyển đến tab:', tabId);
+
+            // 1. Ẩn tất cả tab
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // 2. Hiện tab được chọn
+            const targetId = tabMap[tabId] || 'tab-' + tabId;
+            const target = document.getElementById(targetId);
+            if (target) {
+                target.classList.add('active');
+                console.log('✅ Đã hiển thị:', targetId);
+            } else {
+                console.warn('⚠️ Không tìm thấy tab:', targetId);
+                // Thử fallback: tìm theo id chính xác
+                const fallback = document.getElementById(tabId);
+                if (fallback) fallback.classList.add('active');
+            }
+
+            // 3. Cập nhật mobile menu
+            document.querySelectorAll('.mbn').forEach(el => el.classList.remove('active'));
+            const mbId = mobileMap[tabId] || 'mb-' + tabId;
+            const mb = document.getElementById(mbId);
+            if (mb) mb.classList.add('active');
+
+            // 4. Cuộn lên đầu trang
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // 5. Đóng thông báo nếu có
+            if (typeof closeNP === 'function') closeNP();
+
+        } catch (e) {
+            console.error('❌ Lỗi navigateTo:', e);
+            alert('Không thể chuyển tab: ' + e.message);
+        }
+    };
+
+    // Hàm gắn sự kiện cho các nút
+    function attachNavEvents() {
+        // 1. Tìm tất cả phần tử có onclick="openTab(...)"
+        document.querySelectorAll('[onclick*="openTab"]').forEach(el => {
+            const onclickAttr = el.getAttribute('onclick');
+            const match = onclickAttr.match(/openTab\s*\(\s*['"]([^'"]+)['"]\s*\)/);
+            if (match) {
+                const tabId = match[1];
+                // Xóa onclick cũ để tránh xung đột
+                el.removeAttribute('onclick');
+                // Gắn sự kiện click mới
+                el.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.navigateTo(tabId);
+                });
+                console.log('✅ Đã gắn sự kiện cho nút:', tabId);
+            }
+        });
+
+        // 2. Tìm các nút mobile (class "mbn")
+        document.querySelectorAll('.mbn').forEach(el => {
+            if (el._navAttached) return; // tránh gắn trùng
+            const tabId = el.id.replace('mb-', '');
+            if (tabMap[tabId]) {
+                el.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.navigateTo(tabId);
+                });
+                el._navAttached = true;
+                console.log('✅ Đã gắn sự kiện cho nút mobile:', tabId);
+            }
+        });
+    }
+
+    // Chạy khi DOM sẵn sàng
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(attachNavEvents, 300);
+        });
+    } else {
+        setTimeout(attachNavEvents, 300);
+    }
+
+    // Tự động gắn lại khi có nút mới được thêm vào (VD: khi load dữ liệu)
+    const observer = new MutationObserver(function() {
+        attachNavEvents();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    console.log('✅ Hệ thống navigation mới đã sẵn sàng!');
+})();
     </script>                            
 </body>
 </html>

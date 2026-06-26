@@ -4802,6 +4802,87 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('✅ Hệ thống navigation mới đã sẵn sàng!');
 })();
+        // ===== GIẢI PHÁP CUỐI CÙNG - TỰ ĐỘNG SỬA MỌI LỖI =====
+(function() {
+    console.log('🔥 Đang áp dụng bản vá cuối cùng...');
+
+    // 1. SỬA LỖI CHUYỂN TAB
+    function fixNavigation() {
+        // Tìm tất cả nút có onclick="openTab(...)"
+        document.querySelectorAll('[onclick*="openTab"]').forEach(btn => {
+            const match = btn.getAttribute('onclick').match(/openTab\s*\(\s*['"]([^'"]+)['"]/);
+            if (match) {
+                const tabId = match[1];
+                btn.removeAttribute('onclick'); // xóa onclick cũ
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Chuyển tab thủ công
+                    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                    const target = document.getElementById('tab-' + tabId);
+                    if (target) target.classList.add('active');
+                    // Cập nhật menu mobile
+                    const mp = { home: 'mb-home', 'tai-khoan': 'mb-tk', 'dich-vu': 'mb-dv', 'nap-game': 'mb-ng', 'buff-mxh': 'mb-buff', account: 'mb-acc' };
+                    document.querySelectorAll('.mbn').forEach(el => el.classList.remove('active'));
+                    const mb = document.getElementById(mp[tabId]);
+                    if (mb) mb.classList.add('active');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    if (typeof closeNP === 'function') closeNP();
+                    console.log('✅ Đã chuyển đến tab:', tabId);
+                });
+            }
+        });
+    }
+
+    // 2. THÊM NÚT XÓA CHO GAME & DANH MỤC
+    function addDeleteButtons() {
+        const isAdmin = typeof isA !== 'undefined' && isA;
+        if (!isAdmin) return;
+
+        // Game
+        document.querySelectorAll('#game-grid .ccard, #home-games .ccard').forEach(el => {
+            const gameId = el.dataset.gameId || el.querySelector('[onclick*="ngToLv2"]')?.getAttribute('onclick')?.match(/ngToLv2\s*\(\s*['"]([^'"]+)['"]/)?.[1];
+            if (!gameId || el.querySelector('.del-game-btn')) return;
+            const btn = document.createElement('button');
+            btn.className = 'mt-1.5 w-full bg-red-50 hover:bg-red-100 text-red-500 py-1 rounded-lg text-[10px] font-bold border border-dashed border-red-200 transition del-game-btn';
+            btn.innerHTML = '<i class="fas fa-trash-alt mr-0.5"></i>Xóa';
+            btn.onclick = e => { e.stopPropagation(); if (confirm('Xóa game?')) db.collection('Games').doc(gameId).delete().then(() => toast('✅ Đã xóa','success')).catch(e => toast('Lỗi','error')); };
+            el.appendChild(btn);
+        });
+
+        // Danh mục dịch vụ
+        document.querySelectorAll('#dv-cat-grid .ccard').forEach(el => {
+            const catId = el.dataset.catId || el.querySelector('[onclick*="openDVLv1"]')?.getAttribute('onclick')?.match(/openDVLv1\s*\(\s*['"]([^'"]+)['"]/)?.[1];
+            if (!catId || el.querySelector('.del-cat-btn')) return;
+            const imgDiv = el.querySelector('.relative');
+            if (!imgDiv) return;
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition del-cat-btn z-10';
+            btn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            btn.onclick = e => { e.stopPropagation(); if (confirm('Xóa danh mục?')) db.collection('DanhMucDV').doc(catId).delete().then(() => toast('✅ Đã xóa','success')).catch(e => toast('Lỗi','error')); };
+            imgDiv.appendChild(btn);
+        });
+    }
+
+    // Chạy khi tải trang
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(fixNavigation, 300);
+        setTimeout(addDeleteButtons, 500);
+    });
+
+    // Chạy lại khi quay lại tab
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            setTimeout(addDeleteButtons, 300);
+        }
+    });
+
+    // Chạy lại khi đăng nhập/đăng xuất
+    auth.onAuthStateChanged(function() {
+        setTimeout(addDeleteButtons, 500);
+    });
+
+    console.log('✅ Đã áp dụng bản vá cuối cùng!');
+})();
     </script>                            
 </body>
 </html>

@@ -4419,6 +4419,119 @@ auth.onAuthStateChanged(async u => {
         }, 500);
     }
 });
+        // ============================================================
+// ===== FIX CỨNG NÚT XÓA CHO GAME & DANH MỤC DỊCH VỤ =====
+// ============================================================
+
+function forceDeleteButtons() {
+    const isAdmin = typeof isA !== 'undefined' && isA;
+    if (!isAdmin) {
+        // Nếu không phải admin, xóa tất cả nút xóa đã có
+        document.querySelectorAll('.del-game-btn, .del-cat-btn').forEach(el => el.remove());
+        return;
+    }
+
+    // 1. THÊM NÚT XÓA VÀO GAME
+    document.querySelectorAll('#game-grid .ccard, #home-games .ccard').forEach(el => {
+        // Tìm gameId từ onclick attribute
+        const onclickAttr = el.querySelector('[onclick*="ngToLv2"]')?.getAttribute('onclick') || '';
+        const match = onclickAttr.match(/ngToLv2\s*\(\s*['"]([^'"]+)['"]/);
+        const gameId = match ? match[1] : el.dataset.gameId;
+        if (!gameId) return;
+
+        // Kiểm tra nút xóa đã tồn tại chưa
+        let btn = el.querySelector('.del-game-btn');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.className = 'mt-1.5 w-full bg-red-50 hover:bg-red-100 text-red-500 py-1 rounded-lg text-[10px] font-bold border border-dashed border-red-200 transition active:scale-95 hover:scale-105 del-game-btn';
+            btn.innerHTML = '<i class="fas fa-trash-alt mr-0.5"></i>Xóa';
+            btn.onclick = function(e) {
+                e.stopPropagation();
+                if (confirm('Xóa game này?\nThao tác này sẽ xóa cả các cổng nạp và gói bên trong!')) {
+                    db.collection('Games').doc(gameId).delete()
+                        .then(() => toast('✅ Đã xóa game!', 'success'))
+                        .catch(err => toast('Lỗi: ' + err.message, 'error'));
+                }
+            };
+            // Chèn vào cuối thẻ
+            el.appendChild(btn);
+        }
+    });
+
+    // 2. THÊM NÚT XÓA VÀO DANH MỤC DỊCH VỤ
+    document.querySelectorAll('#dv-cat-grid .ccard').forEach(el => {
+        const onclickAttr = el.querySelector('[onclick*="openDVLv1"]')?.getAttribute('onclick') || '';
+        const match = onclickAttr.match(/openDVLv1\s*\(\s*['"]([^'"]+)['"]/);
+        const catId = match ? match[1] : el.dataset.catId;
+        if (!catId) return;
+
+        let btn = el.querySelector('.del-cat-btn');
+        const imgDiv = el.querySelector('.relative');
+        if (!imgDiv) return;
+
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition active:scale-90 del-cat-btn z-10';
+            btn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            btn.onclick = function(e) {
+                e.stopPropagation();
+                if (confirm('Xóa danh mục dịch vụ này?\nCác sản phẩm bên trong sẽ không bị xóa.') ) {
+                    db.collection('DanhMucDV').doc(catId).delete()
+                        .then(() => toast('✅ Đã xóa danh mục!', 'success'))
+                        .catch(err => toast('Lỗi: ' + err.message, 'error'));
+                }
+            };
+            imgDiv.appendChild(btn);
+        }
+    });
+}
+
+// ===== KÍCH HOẠT =====
+// Chạy khi DOM sẵn sàng
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(forceDeleteButtons, 800);
+});
+
+// Chạy lại khi auth thay đổi (đăng nhập/đăng xuất)
+auth.onAuthStateChanged(function() {
+    setTimeout(forceDeleteButtons, 500);
+});
+
+// Chạy lại khi quay lại tab (visibility change)
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        setTimeout(forceDeleteButtons, 300);
+    }
+});
+
+// Chạy lại sau khi thêm game/danh mục mới
+const _origAddGame = window.addGame;
+window.addGame = async function() {
+    await _origAddGame?.();
+    setTimeout(forceDeleteButtons, 600);
+};
+
+const _origAddDVCat = window.addDVCat;
+window.addDVCat = async function() {
+    await _origAddDVCat?.();
+    setTimeout(forceDeleteButtons, 600);
+};
+
+// Chạy lại sau khi xóa (để cập nhật giao diện)
+const _origDelGame = window.delGame;
+window.delGame = async function(id) {
+    await _origDelGame?.(id);
+    setTimeout(forceDeleteButtons, 400);
+};
+
+const _origDelDVCat = window.delDVCat;
+window.delDVCat = async function(id) {
+    await _origDelDVCat?.(id);
+    setTimeout(forceDeleteButtons, 400);
+};
+
+// Chạy mỗi 3 giây để đảm bảo luôn có (dự phòng)
+setInterval(forceDeleteButtons, 3000);
     </script>
 </body>
 </html>

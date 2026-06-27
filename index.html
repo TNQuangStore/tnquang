@@ -5332,6 +5332,127 @@ window.showSub2 = function(id) {
 
     console.log('✅ Đã áp dụng tất cả fix lag!');
 })();
+        // ================================================================
+// ===== SỬA LỖI ẢNH PLACEHOLDER + TỐI ƯU ANIMATION =====
+// ================================================================
+(function() {
+    console.log('🔄 Đang sửa lỗi ảnh và tối ưu animation...');
+
+    // ----- 1. SỬA LỖI ẢNH (thay thế placeholder bị lỗi) -----
+    function fixImages() {
+        // Tìm tất cả ảnh có src từ via.placeholder.com
+        document.querySelectorAll('img[src*="via.placeholder.com"]').forEach(img => {
+            // Kiểm tra nếu ảnh bị lỗi
+            img.onerror = function() {
+                if (img.dataset.fallbackApplied) return;
+                img.dataset.fallbackApplied = 'true';
+                
+                // Nếu là ảnh sản phẩm (có class cụ thể)
+                if (img.closest('.pcard') || img.closest('.ccard') || img.closest('.fs-card')) {
+                    // Tạo màu nền ngẫu nhiên cho ảnh
+                    const colors = ['#e2e8f0', '#f1f5f9', '#dbeafe', '#fce4ec', '#e8f5e9', '#fff3e0'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    img.style.background = color;
+                    img.style.display = 'flex';
+                    img.style.alignItems = 'center';
+                    img.style.justifyContent = 'center';
+                    // Tạo chữ thay thế
+                    if (!img.dataset.fallbackText) {
+                        img.dataset.fallbackText = '📷';
+                        const text = document.createElement('span');
+                        text.textContent = '📷';
+                        text.style.fontSize = '24px';
+                        text.style.opacity = '0.5';
+                        img.parentElement.style.position = 'relative';
+                        img.parentElement.appendChild(text);
+                        // Đặt vị trí cho text
+                        text.style.position = 'absolute';
+                        text.style.top = '50%';
+                        text.style.left = '50%';
+                        text.style.transform = 'translate(-50%, -50%)';
+                        text.style.pointerEvents = 'none';
+                    }
+                } else {
+                    // Ảnh khác: ẩn đi
+                    img.style.display = 'none';
+                }
+                console.log('🔧 Đã thay thế ảnh placeholder bị lỗi');
+            };
+            
+            // Nếu ảnh đã load xong nhưng bị lỗi (dự phòng)
+            if (img.complete && img.naturalWidth === 0) {
+                img.onerror();
+            }
+        });
+    }
+
+    // ----- 2. TỐI ƯU ANIMATION (giảm lag) -----
+    function optimizeAnimations() {
+        // Tìm tất cả phần tử có animation
+        const animatedElements = document.querySelectorAll('.pcard, .ccard, .fs-card, .tab-content, .sub-page');
+        animatedElements.forEach(el => {
+            // Giảm thời gian animation (0.7s -> 0.2s)
+            if (el.style.animationDuration) {
+                const oldDuration = parseFloat(el.style.animationDuration) || 0.7;
+                if (oldDuration > 0.2) {
+                    el.style.animationDuration = Math.max(0.15, oldDuration * 0.3) + 's';
+                }
+            }
+            // Thêm will-change để GPU tăng tốc
+            if (!el.style.willChange) {
+                el.style.willChange = 'transform, opacity';
+            }
+        });
+        
+        console.log('✅ Đã tối ưu animation cho', animatedElements.length, 'phần tử');
+    }
+
+    // ----- 3. SỬA LỖI OPEN OL (bảng xem sản phẩm) -----
+    // Ghi đè hàm openOL2 để tối ưu khi mở sản phẩm
+    if (typeof window.openOL2 === 'function') {
+        const _origOpenOL2 = window.openOL2;
+        window.openOL2 = async function(productId) {
+            try {
+                console.log('📦 Đang mở sản phẩm:', productId);
+                // Gọi hàm gốc
+                await _origOpenOL2(productId);
+                // Sau khi mở, sửa ảnh và tối ưu
+                setTimeout(() => {
+                    fixImages();
+                    optimizeAnimations();
+                    // Tối ưu thêm: giảm độ trễ animation cho các phần tử trong OL2
+                    const ol2Body = document.getElementById('ol2-body');
+                    if (ol2Body) {
+                        ol2Body.querySelectorAll('.pcard, .ccard, .fs-card').forEach(el => {
+                            el.style.animationDuration = '0.15s';
+                            el.style.willChange = 'transform';
+                        });
+                    }
+                }, 100);
+            } catch (e) {
+                console.error('❌ Lỗi mở sản phẩm:', e);
+                toast('Lỗi tải sản phẩm, vui lòng thử lại.', 'error');
+            }
+        };
+        console.log('✅ Đã tối ưu hàm openOL2');
+    }
+
+    // ----- 4. KÍCH HOẠT -----
+    // Chạy khi DOM load
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(fixImages, 300);
+        setTimeout(optimizeAnimations, 400);
+    });
+
+    // Chạy lại khi có sự thay đổi (ví dụ: load sản phẩm mới)
+    const imageObserver = new MutationObserver(function() {
+        setTimeout(fixImages, 200);
+        setTimeout(optimizeAnimations, 300);
+    });
+    imageObserver.observe(document.body, { childList: true, subtree: true });
+
+    console.log('✅ Đã sửa lỗi ảnh và tối ưu animation!');
+})();
 
 
     </script>                            

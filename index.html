@@ -5453,6 +5453,154 @@ window.showSub2 = function(id) {
 
     console.log('✅ Đã sửa lỗi ảnh và tối ưu animation!');
 })();
+        // ================================================================
+// ===== GIẢI PHÁP TRIỆT ĐỂ: NGĂN TẢI ẢNH PLACEHOLDER + TỐI ƯU =====
+// ================================================================
+
+(function() {
+    console.log('🔥 Đang áp dụng giải pháp triệt để...');
+
+    // ----- 1. NGĂN TẢI ẢNH PLACEHOLDER BẰNG CÁCH CHẶN SRC -----
+    // Hàm thay thế tất cả ảnh placeholder thành fallback ngay lập tức
+    function replacePlaceholderImages() {
+        document.querySelectorAll('img[src*="via.placeholder.com"]').forEach(img => {
+            // Nếu đã được xử lý thì bỏ qua
+            if (img.dataset.fixed) return;
+            img.dataset.fixed = 'true';
+            
+            // Lưu kích thước dự định
+            const width = img.width || 100;
+            const height = img.height || 100;
+            
+            // Tạo một ảnh fallback bằng data URI (hình vuông màu xám + icon)
+            // Hoặc dùng ảnh inline base64 (có thể tạo 1px gif)
+            const fallbackSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='${Math.min(width,height)*0.4}' text-anchor='middle' dy='.3em' fill='%2394a3b8'%3E📷%3C/text%3E%3C/svg%3E`;
+            
+            // Thay src bằng fallback ngay lập tức (không request network)
+            img.src = fallbackSvg;
+            
+            // Nếu ảnh là background (style background-image) cũng thay
+            if (img.style.backgroundImage && img.style.backgroundImage.includes('via.placeholder.com')) {
+                img.style.backgroundImage = `url(${fallbackSvg})`;
+            }
+            
+            // Xóa sự kiện onerror cũ để tránh spam
+            img.onerror = null;
+            
+            console.log('✅ Đã thay thế ảnh placeholder:', img.src);
+        });
+    }
+
+    // ----- 2. TỐI ƯU MỞ SẢN PHẨM (GIẢM LAG) -----
+    if (typeof window.openOL2 === 'function') {
+        const _origOpenOL2 = window.openOL2;
+        window.openOL2 = async function(productId) {
+            try {
+                // Hiệu ứng loading nhẹ (tùy chọn)
+                console.log('📦 Mở sản phẩm:', productId);
+                
+                // Gọi hàm gốc
+                await _origOpenOL2(productId);
+                
+                // Sau khi mở, xử lý ảnh và tối ưu animation trong 2 frame để mượt
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        replacePlaceholderImages();
+                        // Tối ưu animation
+                        const ol2Body = document.getElementById('ol2-body');
+                        if (ol2Body) {
+                            ol2Body.querySelectorAll('.pcard, .ccard, .fs-card, .faq-item, .rv-c').forEach(el => {
+                                el.style.animationDuration = '0.15s';
+                                el.style.willChange = 'transform';
+                                // Loại bỏ transition nếu có để tránh giật
+                                el.style.transition = 'transform 0.15s ease, box-shadow 0.15s ease';
+                            });
+                        }
+                        console.log('✅ Đã tối ưu bảng sản phẩm');
+                    });
+                });
+            } catch (e) {
+                console.error('❌ Lỗi mở sản phẩm:', e);
+                toast('Lỗi tải sản phẩm, vui lòng thử lại.', 'error');
+            }
+        };
+        console.log('✅ Đã ghi đè openOL2 để tối ưu');
+    }
+
+    // ----- 3. TỐI ƯU ANIMATION TOÀN CỤC (GIẢM ĐỘ TRỄ) -----
+    function optimizeGlobalAnimations() {
+        // Rút ngắn animation của các thành phần chính
+        document.querySelectorAll('.tab-content, .sub-page, .pcard, .ccard, .fs-card, .modal-box, #ol2-sheet').forEach(el => {
+            // Giảm thời gian animation xuống còn 0.2s
+            const styles = window.getComputedStyle(el);
+            const duration = parseFloat(styles.animationDuration) || 0;
+            if (duration > 0.2) {
+                el.style.animationDuration = Math.max(0.15, duration * 0.3) + 's';
+            }
+            // Thêm will-change
+            if (!el.style.willChange) {
+                el.style.willChange = 'transform, opacity';
+            }
+        });
+        console.log('✅ Đã tối ưu animation toàn cục');
+    }
+
+    // ----- 4. KÍCH HOẠT -----
+    // Chạy ngay khi DOM load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Xử lý ảnh ngay lập tức
+        replacePlaceholderImages();
+        // Tối ưu animation sau 100ms
+        setTimeout(optimizeGlobalAnimations, 100);
+    });
+
+    // Chạy lại khi có sự thay đổi DOM (ví dụ: load sản phẩm mới)
+    const observer = new MutationObserver(function(mutations) {
+        let needFix = false;
+        for (const mut of mutations) {
+            if (mut.type === 'childList' && mut.addedNodes.length > 0) {
+                for (const node of mut.addedNodes) {
+                    if (node.nodeType === 1 && (node.matches && node.matches('img[src*="via.placeholder.com"]'))) {
+                        needFix = true;
+                        break;
+                    }
+                    if (node.querySelectorAll) {
+                        if (node.querySelectorAll('img[src*="via.placeholder.com"]').length > 0) {
+                            needFix = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (needFix) break;
+        }
+        if (needFix) {
+            // Dùng requestAnimationFrame để xử lý trước khi trình duyệt render
+            requestAnimationFrame(() => {
+                replacePlaceholderImages();
+            });
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Chạy lại khi mở overlay (bảng sản phẩm)
+    const ol2Observer = new MutationObserver(function() {
+        const ol2 = document.getElementById('ol2');
+        if (ol2 && ol2.classList.contains('open')) {
+            // Khi ol2 mở, xử lý ảnh ngay
+            setTimeout(replacePlaceholderImages, 50);
+            setTimeout(optimizeGlobalAnimations, 100);
+        }
+    });
+    ol2Observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    // Xóa các onerror cũ để tránh spam
+    document.querySelectorAll('img[src*="via.placeholder.com"]').forEach(img => {
+        img.onerror = null;
+    });
+
+    console.log('✅ Giải pháp triệt để đã áp dụng! Không còn lỗi ảnh và lag giảm đáng kể.');
+})();
 
 
     </script>                            

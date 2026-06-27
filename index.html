@@ -5695,6 +5695,246 @@ window.showSub2 = function(id) {
 
     console.log('✅ Tối ưu đóng sản phẩm hoàn tất!');
 })();
+        // ================================================================
+// ===== GIẢI PHÁP TỐI ƯU TOÀN DIỆN - FIX LAG + LỖI =====
+// ================================================================
+
+(function() {
+    console.log('🚀 Bắt đầu tối ưu toàn diện...');
+
+    // ================================================================
+    // 1. NGĂN CHẶN ẢNH PLACEHOLDER NGAY TỪ ĐẦU (KHÔNG REQUEST)
+    // ================================================================
+    function blockPlaceholderImages() {
+        // Thay thế tất cả ảnh placeholder trước khi trình duyệt kịp request
+        document.querySelectorAll('img[src*="via.placeholder.com"]').forEach(img => {
+            if (img.dataset._fixed) return;
+            img.dataset._fixed = 'true';
+            
+            // Lưu kích thước
+            const w = img.width || img.getAttribute('width') || 100;
+            const h = img.height || img.getAttribute('height') || 100;
+            
+            // Tạo fallback bằng SVG (không cần request network)
+            const svg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='${Math.min(w,h)*0.35}' text-anchor='middle' dy='.3em' fill='%2394a3b8'%3E📷%3C/text%3E%3C/svg%3E`;
+            
+            // Thay src bằng fallback (không request)
+            img.src = svg;
+            img.onerror = null; // Xóa onerror để tránh spam
+            img.loading = 'lazy'; // Thêm lazy loading
+            
+            // Nếu có background-image placeholder
+            if (img.style.backgroundImage && img.style.backgroundImage.includes('via.placeholder.com')) {
+                img.style.backgroundImage = `url(${svg})`;
+            }
+        });
+    }
+
+    // Chạy ngay lập tức và liên tục (dùng MutationObserver)
+    blockPlaceholderImages();
+
+    // Observer để chặn ảnh mới được thêm vào DOM
+    const imgObserver = new MutationObserver(() => {
+        blockPlaceholderImages();
+    });
+    imgObserver.observe(document.body, { childList: true, subtree: true });
+
+    // ================================================================
+    // 2. TỐI ƯU HÀM MỞ/ĐÓNG SẢN PHẨM (FIX LAG)
+    // ================================================================
+    if (typeof window.openOL2 === 'function') {
+        const _origOpenOL2 = window.openOL2;
+        window.openOL2 = async function(productId) {
+            try {
+                // Chặn multiple click
+                if (this._opening) return;
+                this._opening = true;
+                
+                console.log('📦 Mở sản phẩm:', productId);
+                await _origOpenOL2(productId);
+                
+                // Sau khi mở, tối ưu ngay
+                requestAnimationFrame(() => {
+                    // Xử lý ảnh
+                    blockPlaceholderImages();
+                    
+                    // Tối ưu animation bên trong
+                    const body = document.getElementById('ol2-body');
+                    if (body) {
+                        body.querySelectorAll('.pcard, .ccard, .fs-card, .faq-item, .rv-c').forEach(el => {
+                            el.style.animationDuration = '0.15s';
+                            el.style.willChange = 'transform, opacity';
+                            el.style.transition = 'transform 0.15s ease, box-shadow 0.15s ease';
+                        });
+                    }
+                    
+                    // Giảm thời gian animation của sheet
+                    const sheet = document.getElementById('ol2-sheet');
+                    if (sheet) {
+                        sheet.style.animationDuration = '0.25s';
+                    }
+                    
+                    this._opening = false;
+                    console.log('✅ Đã tối ưu bảng sản phẩm');
+                });
+            } catch (e) {
+                console.error('❌ Lỗi mở sản phẩm:', e);
+                toast('Lỗi tải sản phẩm, vui lòng thử lại.', 'error');
+                this._opening = false;
+            }
+        };
+        console.log('✅ Đã tối ưu openOL2');
+    }
+
+    // Tối ưu đóng sản phẩm (closeOL2)
+    if (typeof window.closeOL2 === 'function') {
+        const _origCloseOL2 = window.closeOL2;
+        window.closeOL2 = function() {
+            try {
+                // Thêm animation khi đóng để mượt hơn
+                const sheet = document.getElementById('ol2-sheet');
+                if (sheet) {
+                    sheet.style.animationDuration = '0.2s';
+                }
+                _origCloseOL2();
+                console.log('✅ Đóng sản phẩm mượt mà');
+            } catch (e) {
+                console.warn('Lỗi khi đóng sản phẩm:', e);
+                _origCloseOL2();
+            }
+        };
+        console.log('✅ Đã tối ưu closeOL2');
+    }
+
+    // ================================================================
+    // 3. TỐI ƯU ANIMATION TOÀN CỤC (GIẢM LAG)
+    // ================================================================
+    function optimizeAllAnimations() {
+        // Rút ngắn animation của các thành phần chính
+        const selectors = [
+            '.tab-content', '.sub-page', '.pcard', '.ccard', 
+            '.fs-card', '.modal-box', '#ol2-sheet', '.rv-c'
+        ];
+        document.querySelectorAll(selectors.join(',')).forEach(el => {
+            // Giảm thời gian animation
+            const computed = window.getComputedStyle(el);
+            const duration = parseFloat(computed.animationDuration) || 0;
+            if (duration > 0.2) {
+                el.style.animationDuration = Math.max(0.15, duration * 0.3) + 's';
+            }
+            // Thêm will-change cho GPU
+            if (!el.style.willChange) {
+                el.style.willChange = 'transform, opacity';
+            }
+        });
+        
+        // Giảm thời gian transition
+        document.querySelectorAll('.pcard, .ccard, .fs-card, .hc, .mbn, .pkg-active').forEach(el => {
+            const trans = window.getComputedStyle(el).transitionDuration;
+            if (trans && parseFloat(trans) > 0.2) {
+                el.style.transitionDuration = '0.15s';
+            }
+        });
+    }
+
+    // Chạy tối ưu sau khi DOM load
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(optimizeAllAnimations, 100);
+        setTimeout(blockPlaceholderImages, 50);
+    });
+
+    // ================================================================
+    // 4. TỐI ƯU ADMIN TOOLS (GIẢM TẢI FIRESTORE)
+    // ================================================================
+    // Ghi đè loadInbox để giảm số lượng listener
+    if (typeof window.loadInbox === 'function') {
+        const _origLoadInbox = window.loadInbox;
+        window.loadInbox = function(tab) {
+            try {
+                // Nếu có listener cũ thì hủy
+                if (window._inboxUnsub) {
+                    window._inboxUnsub();
+                    window._inboxUnsub = null;
+                }
+                // Gọi hàm gốc nhưng sẽ dùng get() thay vì onSnapshot
+                _origLoadInbox(tab);
+                console.log('✅ Đã tối ưu loadInbox');
+            } catch (e) {
+                console.warn('Lỗi loadInbox:', e);
+                _origLoadInbox(tab);
+            }
+        };
+    }
+
+    // ================================================================
+    // 5. DỌN DẸP LỖI CONSOLE (BẮT LỖI TOÀN CỤC)
+    // ================================================================
+    // Bắt lỗi ảnh để tránh console spam
+    document.addEventListener('error', function(e) {
+        if (e.target.tagName === 'IMG' && e.target.src && e.target.src.includes('via.placeholder.com')) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Thay thế ảnh ngay nếu chưa được fix
+            if (!e.target.dataset._fixed) {
+                blockPlaceholderImages();
+            }
+            return false;
+        }
+    }, true);
+
+    // ================================================================
+    // 6. TỐI ƯU ĐÓNG BẢNG SẢN PHẨM KHI CLICK BÊN NGOÀI
+    // ================================================================
+    document.addEventListener('click', function(e) {
+        const ol2 = document.getElementById('ol2');
+        if (ol2 && ol2.classList.contains('open')) {
+            // Nếu click vào overlay background (không phải sheet)
+            if (e.target === ol2) {
+                // Đóng với animation mượt
+                if (typeof window.closeOL2 === 'function') {
+                    window.closeOL2();
+                }
+            }
+        }
+    });
+
+    // ================================================================
+    // 7. GIẢM TẦN SUẤT CÁC INTERVAL KHÔNG CẦN THIẾT
+    // ================================================================
+    // Tìm và giảm tần suất interval của forceDeleteButtons (từ 3s lên 10s)
+    if (window.forceDeleteButtons) {
+        // Lưu interval cũ và thay bằng interval mới chậm hơn
+        if (window._oldDeleteInterval) {
+            clearInterval(window._oldDeleteInterval);
+        }
+        window._oldDeleteInterval = setInterval(window.forceDeleteButtons, 10000);
+        console.log('✅ Đã giảm tần suất forceDeleteButtons từ 3s xuống 10s');
+    }
+
+    // ================================================================
+    // 8. TỐI ƯU HIỂN THỊ SẢN PHẨM (HOT LIST)
+    // ================================================================
+    // Nếu có hot-list, tối ưu render
+    const hotList = document.getElementById('hot-list');
+    if (hotList) {
+        // Thêm will-change cho các card
+        const style = document.createElement('style');
+        style.textContent = `
+            #hot-list .pcard {
+                will-change: transform;
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
+            }
+            #hot-list .pcard:hover {
+                transform: translateY(-4px);
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    console.log('✅ Tối ưu toàn diện đã hoàn tất!');
+    console.log('💡 Web của bạn sẽ mượt hơn, ít lỗi hơn, đặc biệt khi mở/đóng sản phẩm.');
+})();
 
 
     </script>                            

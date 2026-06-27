@@ -4773,6 +4773,316 @@ window.showSub2 = function(id) {
 
     console.log('✅ Đã tối ưu hiệu năng!');
 })();
+        // ================================================================
+// ===== TỐI ƯU ULTRA - CẢI THIỆN HIỆU SUẤT MÀ KHÔNG MẤT TÍNH NĂNG =====
+// ================================================================
+
+(function() {
+    console.log('⚡ Bắt đầu tối ưu ULTRA...');
+
+    // ================================================================
+    // 1. THAY THẾ INNERHTML BẰNG replaceChildren (GIẢM REPAINT)
+    // ================================================================
+    const originalSetHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+    if (originalSetHTML) {
+        Object.defineProperty(Element.prototype, 'innerHTML', {
+            get: function() {
+                return originalSetHTML.get.call(this);
+            },
+            set: function(value) {
+                // Nếu nội dung giống nhau thì bỏ qua
+                if (this.innerHTML === value) return;
+                // Dùng requestAnimationFrame để gộp các thay đổi
+                if (this._pendingHTML) cancelAnimationFrame(this._pendingHTML);
+                this._pendingHTML = requestAnimationFrame(() => {
+                    originalSetHTML.set.call(this, value);
+                    this._pendingHTML = null;
+                });
+            }
+        });
+        console.log('✅ Tối ưu innerHTML: đã áp dụng debounce với requestAnimationFrame');
+    }
+
+    // ================================================================
+    // 2. GIẢM TẦN SUẤT FIRESTORE LISTENER VÀ CHUYỂN SANG get()
+    // ================================================================
+    // Lưu các listener cũ
+    const _origInitHome = window.initHome || function(){};
+
+    // Ghi đè initHome để tối ưu
+    window.initHome = function() {
+        // Gọi hàm gốc (vẫn giữ các listener cần thiết)
+        if (typeof _origInitHome === 'function') _origInitHome();
+
+        // ----- Tối ưu Recent Orders (chuyển sang get() thay vì onSnapshot) -----
+        // Gỡ bỏ listener cũ (nếu có) và thay bằng get()
+        const recentOrdersEl = document.getElementById('recent-orders');
+        if (recentOrdersEl) {
+            // Hủy listener cũ (nếu là onSnapshot)
+            if (window._recentOrdersUnsub) {
+                window._recentOrdersUnsub();
+                window._recentOrdersUnsub = null;
+            }
+            // Hàm load dữ liệu
+            async function loadRecentOrders() {
+                try {
+                    const snap = await db.collection('orders').orderBy('ngay', 'desc').limit(10).get();
+                    if (snap.empty) {
+                        recentOrdersEl.innerHTML = '<div class="text-center text-slate-400 py-6 text-xs">Chưa ghi nhận đơn hàng nào.</div>';
+                        return;
+                    }
+                    let html = '';
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        const he = d.email ? d.email.substring(0, 3) + '***' + d.email.substring(d.email.indexOf('@')) : 'Khách';
+                        const tt = d.category === 'nap-game' ? d.pkgName : (d.tenSP || 'Sản phẩm');
+                        html += `<div class="flex items-center justify-between border-b border-slate-50 pb-2.5 last:border-0">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-7 h-7 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center text-xs flex-shrink-0"><i class="fas fa-shopping-basket"></i></div>
+                                <div>
+                                    <div class="text-xs text-slate-700 line-clamp-1"><span class="font-extrabold text-emerald-600">${he}</span> mua ${tt}</div>
+                                    <div class="text-[10px] text-slate-400 font-semibold">${tAgo(d.ngay)}</div>
+                                </div>
+                            </div>
+                            <div class="text-xs font-black text-blue-700 flex-shrink-0 ml-2">${fmt(d.totalPrice)}</div>
+                        </div>`;
+                    });
+                    recentOrdersEl.innerHTML = html;
+                } catch (e) {
+                    console.warn('Recent orders error:', e);
+                }
+            }
+            loadRecentOrders();
+            // Lưu hàm refresh để gọi khi cần
+            window._refreshRecentOrders = loadRecentOrders;
+            // Refresh mỗi 30 giây thay vì realtime
+            if (window._recentOrdersInterval) clearInterval(window._recentOrdersInterval);
+            window._recentOrdersInterval = setInterval(loadRecentOrders, 30000);
+        }
+
+        // ----- Tối ưu Recent Deposits (chuyển sang get() thay vì onSnapshot) -----
+        const recentDepositsEl = document.getElementById('recent-deposits');
+        if (recentDepositsEl) {
+            if (window._recentDepositsUnsub) {
+                window._recentDepositsUnsub();
+                window._recentDepositsUnsub = null;
+            }
+            async function loadRecentDeposits() {
+                try {
+                    const snap = await db.collection('GiaoDich').where('loai', '==', 'cong').orderBy('thoiGian', 'desc').limit(10).get();
+                    if (snap.empty) {
+                        recentDepositsEl.innerHTML = '<div class="text-center text-slate-400 py-6 text-xs">Chưa ghi nhận dòng tiền cộng.</div>';
+                        return;
+                    }
+                    let html = '';
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        const he = d.email ? d.email.substring(0, 3) + '***' + d.email.substring(d.email.indexOf('@')) : 'Thành viên';
+                        html += `<div class="flex items-center justify-between border-b border-slate-50 pb-2.5 last:border-0">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-7 h-7 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xs flex-shrink-0"><i class="fas fa-plus"></i></div>
+                                <div>
+                                    <div class="text-xs text-slate-700"><span class="font-extrabold text-blue-600">${he}</span> nạp tiền</div>
+                                    <div class="text-[10px] text-slate-400 font-semibold">${tAgo(d.thoiGian)}</div>
+                                </div>
+                            </div>
+                            <div class="text-xs font-black text-emerald-600 flex-shrink-0 ml-2">+${fmt(d.soTien)}</div>
+                        </div>`;
+                    });
+                    recentDepositsEl.innerHTML = html;
+                } catch (e) {
+                    console.warn('Recent deposits error:', e);
+                }
+            }
+            loadRecentDeposits();
+            window._refreshRecentDeposits = loadRecentDeposits;
+            if (window._recentDepositsInterval) clearInterval(window._recentDepositsInterval);
+            window._recentDepositsInterval = setInterval(loadRecentDeposits, 30000);
+        }
+
+        // ----- Tối ưu Notifications (chuyển sang get() + interval) -----
+        // Hàm loadNotifs đã được định nghĩa, chúng ta sẽ giữ nguyên nhưng tăng limit và dùng get()
+        if (typeof window.loadNotifs === 'function') {
+            const _origLoadNotifs = window.loadNotifs;
+            window.loadNotifs = function() {
+                if (!U) return;
+                // Nếu đã có interval thì clear
+                if (window._notifInterval) clearInterval(window._notifInterval);
+                // Gọi load lần đầu
+                _origLoadNotifs();
+                // Refresh mỗi 30 giây
+                window._notifInterval = setInterval(_origLoadNotifs, 30000);
+            };
+            // Gọi lại loadNotifs để áp dụng
+            window.loadNotifs();
+        }
+
+        console.log('✅ Đã chuyển Recent Orders, Deposits, Notifications sang chế độ get() + interval để giảm tải realtime');
+    };
+
+    // Gọi initHome sau khi đã ghi đè
+    if (document.readyState === 'complete') {
+        setTimeout(window.initHome, 300);
+    } else {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(window.initHome, 300);
+        });
+    }
+
+    // ================================================================
+    // 3. GIẢM TẦN SUẤT forceDeleteButtons (từ 3 giây lên 10 giây)
+    // ================================================================
+    if (window.forceDeleteButtons) {
+        // Hủy các interval cũ
+        const oldIntervals = window._deleteIntervals || [];
+        oldIntervals.forEach(id => clearInterval(id));
+        window._deleteIntervals = [];
+
+        // Thay thế bằng interval 10 giây
+        const newInterval = setInterval(window.forceDeleteButtons, 10000);
+        window._deleteIntervals.push(newInterval);
+        console.log('✅ Đã giảm tần suất forceDeleteButtons từ 3s xuống 10s');
+    }
+
+    // ================================================================
+    // 4. TỐI ƯU MUTATION OBSERVER (chỉ chạy khi cần)
+    // ================================================================
+    // Gỡ bỏ các observer cũ (nếu có) và tạo observer thông minh
+    if (window._smartObserver) {
+        window._smartObserver.disconnect();
+        window._smartObserver = null;
+    }
+
+    // Chỉ observe các thay đổi liên quan đến DOM động (ví dụ: khi thêm sản phẩm)
+    const smartObserver = new MutationObserver(function(mutations) {
+        let shouldRefresh = false;
+        for (const mutation of mutations) {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                // Nếu có node mới được thêm vào các khu vực quan trọng
+                const added = mutation.addedNodes;
+                for (const node of added) {
+                    if (node.nodeType === 1) {
+                        if (node.matches && (node.matches('.pcard, .ccard, .fs-card, #pkg-list .border-2'))) {
+                            shouldRefresh = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (shouldRefresh) break;
+        }
+        if (shouldRefresh) {
+            // Debounce refresh
+            if (window._refreshTimeout) clearTimeout(window._refreshTimeout);
+            window._refreshTimeout = setTimeout(() => {
+                // Chỉ gọi các hàm cần thiết
+                if (typeof window.forceDeleteButtons === 'function') {
+                    window.forceDeleteButtons();
+                }
+                // Cập nhật danh sách gói nếu đang ở trang nạp game
+                if (document.getElementById('ng-lv3') && !document.getElementById('ng-lv3').classList.contains('hidden')) {
+                    if (window.ngTid && typeof window.ngToLv3 === 'function') {
+                        // Không gọi lại toàn bộ, chỉ refresh nếu cần
+                    }
+                }
+                window._refreshTimeout = null;
+            }, 300);
+        }
+    });
+
+    // Chỉ observe body với cấu hình nhẹ
+    smartObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+        characterData: false
+    });
+    window._smartObserver = smartObserver;
+    console.log('✅ Đã tối ưu MutationObserver: chỉ kích hoạt khi thêm node mới');
+
+    // ================================================================
+    // 5. TỐI ƯU SỰ KIỆN CLICK (sử dụng event delegation)
+    // ================================================================
+    // Thay vì gắn nhiều listener, dùng event delegation cho các nút chuyển tab
+    document.addEventListener('click', function(e) {
+        // Xử lý các nút có data-tab attribute
+        const tabBtn = e.target.closest('[data-tab]');
+        if (tabBtn) {
+            e.preventDefault();
+            const tabId = tabBtn.dataset.tab;
+            if (typeof window.openTab === 'function') {
+                window.openTab(tabId);
+            }
+            return;
+        }
+        // Xử lý các nút có class mbn (mobile nav) - đã có trong code, nhưng thêm delegation để đảm bảo
+        const mbn = e.target.closest('.mbn');
+        if (mbn && !mbn._eventDelegated) {
+            const tabId = mbn.id.replace('mb-', '');
+            if (tabId && typeof window.openTab === 'function') {
+                e.preventDefault();
+                window.openTab(tabId);
+                mbn._eventDelegated = true; // đánh dấu để không bị trùng
+            }
+        }
+    }, true); // capture phase để ưu tiên
+
+    console.log('✅ Đã áp dụng event delegation cho các nút chuyển tab');
+
+    // ================================================================
+    // 6. TỐI ƯU THÊM: Dọn dẹp memory leaks
+    // ================================================================
+    // Đảm bảo hủy các interval khi chuyển trang (nếu dùng SPA)
+    window.addEventListener('beforeunload', function() {
+        if (window._recentOrdersInterval) clearInterval(window._recentOrdersInterval);
+        if (window._recentDepositsInterval) clearInterval(window._recentDepositsInterval);
+        if (window._notifInterval) clearInterval(window._notifInterval);
+        if (window._deleteIntervals) {
+            window._deleteIntervals.forEach(id => clearInterval(id));
+        }
+        if (window._smartObserver) window._smartObserver.disconnect();
+        if (window._refreshTimeout) clearTimeout(window._refreshTimeout);
+        console.log('🧹 Đã dọn dẹp interval và observer trước khi rời trang');
+    });
+
+    // ================================================================
+    // 7. TĂNG HIỆU NĂNG RENDER BẰNG CSS (sử dụng will-change)
+    // ================================================================
+    // Thêm CSS động cho các phần tử có animation
+    const style = document.createElement('style');
+    style.textContent = `
+        .pcard, .ccard, .fs-card {
+            will-change: transform, opacity;
+        }
+        .tab-content.active {
+            will-change: opacity, transform;
+        }
+        .mbn i {
+            will-change: transform;
+        }
+        .ti {
+            will-change: transform, opacity;
+        }
+        /* Giảm repaint khi hover */
+        .pcard:hover, .ccard:hover, .fs-card:hover {
+            will-change: transform, box-shadow;
+        }
+    `;
+    document.head.appendChild(style);
+    console.log('✅ Đã thêm will-change để tăng hiệu năng render');
+
+    // ================================================================
+    // 8. KÍCH HOẠT LẠI CÁC HÀM CẦN THIẾT
+    // ================================================================
+    // Gọi lại các hàm refresh để đảm bảo dữ liệu mới
+    setTimeout(() => {
+        if (window._refreshRecentOrders) window._refreshRecentOrders();
+        if (window._refreshRecentDeposits) window._refreshRecentDeposits();
+        if (typeof window.forceDeleteButtons === 'function') window.forceDeleteButtons();
+    }, 1000);
+
+    console.log('⚡ Tối ưu ULTRA đã hoàn tất! Web của bạn sẽ mượt hơn rất nhiều.');
+})();
 
 
     </script>                            

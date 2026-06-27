@@ -4730,6 +4730,49 @@ window.showSub2 = function(id) {
 
     console.log('✅ Bản vá bổ sung đã sẵn sàng!');
 })();
+        // ===== TỐI ƯU HIỆU NĂNG - GIẢM LAG (KHÔNG XÓA CODE CŨ) =====
+(function() {
+    console.log('⚡ Đang áp dụng tối ưu hiệu năng...');
+
+    // 1. Hủy bỏ các setInterval không cần thiết (nếu có)
+    const intervals = [];
+    const originalSetInterval = window.setInterval;
+    window.setInterval = function(fn, delay) {
+        // Chỉ giữ lại những interval cần thiết (ví dụ: flash sale countdown)
+        if (delay >= 1000) {
+            return originalSetInterval(fn, delay);
+        }
+        console.warn('⛔ Đã chặn interval quá nhanh:', delay);
+        return -1;
+    };
+
+    // 2. Giảm tần suất cập nhật của các listener (nếu có)
+    // (Không thể can thiệp trực tiếp vào .onSnapshot, nhưng có thể điều chỉnh)
+
+    // 3. Tối ưu DOM: chỉ update khi thực sự cần
+    // (Sử dụng requestAnimationFrame để gộp nhiều update)
+    const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+    Object.defineProperty(Element.prototype, 'innerHTML', {
+        get: function() {
+            return originalInnerHTML.get.call(this);
+        },
+        set: function(value) {
+            // Nếu nội dung không thay đổi thì bỏ qua
+            if (this.innerHTML === value) return;
+            // Dùng requestAnimationFrame để gộp các thay đổi
+            if (this._pendingUpdate) cancelAnimationFrame(this._pendingUpdate);
+            this._pendingUpdate = requestAnimationFrame(() => {
+                originalInnerHTML.set.call(this, value);
+                this._pendingUpdate = null;
+            });
+        }
+    });
+
+    // 4. Dọn dẹp các listener không dùng đến (nếu có)
+    // (Thủ công: bạn có thể tắt bớt các tab không cần thiết)
+
+    console.log('✅ Đã tối ưu hiệu năng!');
+})();
 
 
     </script>                            

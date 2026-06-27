@@ -5083,6 +5083,255 @@ window.showSub2 = function(id) {
 
     console.log('⚡ Tối ưu ULTRA đã hoàn tất! Web của bạn sẽ mượt hơn rất nhiều.');
 })();
+        // ================================================================
+// ===== FIX LAG: TỐI ƯU ANIMATION VÀ OVERLAY LP2 =====
+// ================================================================
+
+(function() {
+    console.log('🔧 Đang áp dụng fix lag animation & overlay...');
+
+    // ================================================================
+    // 1. TỐI ƯU ANIMATION (giảm lag khi cuộn & chuyển tab)
+    // ================================================================
+
+    // Kiểm tra thiết bị có hỗ trợ animation mượt không
+    const isSlowDevice = () => {
+        // Kiểm tra bằng cách đo FPS
+        let frameCount = 0;
+        let lastTime = performance.now();
+        const testFPS = () => {
+            frameCount++;
+            const now = performance.now();
+            if (now - lastTime >= 1000) {
+                const fps = frameCount;
+                frameCount = 0;
+                lastTime = now;
+                // Nếu FPS < 30 => thiết bị yếu
+                if (fps < 30) return true;
+                return false;
+            }
+            requestAnimationFrame(testFPS);
+        };
+        // Chạy test nhanh trong 1 giây
+        return new Promise(resolve => {
+            let count = 0;
+            const start = performance.now();
+            const check = () => {
+                count++;
+                if (performance.now() - start > 1000) {
+                    resolve(count < 30);
+                } else {
+                    requestAnimationFrame(check);
+                }
+            };
+            requestAnimationFrame(check);
+        });
+    };
+
+    // Hàm giảm animation cho thiết bị yếu
+    async function reduceAnimations() {
+        const slow = await isSlowDevice();
+        if (slow) {
+            console.log('⚠️ Phát hiện thiết bị yếu, giảm animation...');
+            // Thêm CSS để giảm animation
+            const style = document.createElement('style');
+            style.textContent = `
+                /* Giảm thời gian animation */
+                .tab-content, .sub-page, .pcard, .ccard, .fs-card {
+                    animation-duration: 0.2s !important;
+                    transition-duration: 0.15s !important;
+                }
+                /* Tắt animation cho các hiệu ứng không cần thiết */
+                .pcard:hover, .ccard:hover, .fs-card:hover {
+                    transform: none !important;
+                    transition: none !important;
+                }
+                .mbn i {
+                    transition: none !important;
+                }
+                .mbn.active i {
+                    transform: none !important;
+                }
+                /* Giảm hiệu ứng backdrop-filter */
+                .modal-overlay, #ol2, #popup-notif {
+                    backdrop-filter: blur(4px) !important;
+                    -webkit-backdrop-filter: blur(4px) !important;
+                }
+                /* Tối ưu overlay LP2 */
+                #ol2-sheet {
+                    animation-duration: 0.2s !important;
+                }
+                #ol2-body {
+                    padding-bottom: 80px !important;
+                }
+                /* Tắt shimmer effect */
+                .shimmer-load {
+                    animation: none !important;
+                }
+            `;
+            document.head.appendChild(style);
+            // Thêm class để nhận biết
+            document.body.classList.add('slow-device');
+        } else {
+            console.log('✅ Thiết bị mạnh, giữ nguyên animation đẹp mắt');
+        }
+    }
+
+    // Chạy sau khi trang load
+    setTimeout(reduceAnimations, 1500);
+
+    // ================================================================
+    // 2. TỐI ƯU OVERLAY LP2 (giảm lag khi mở sản phẩm)
+    // ================================================================
+
+    // Lưu hàm openOL2 gốc
+    const _origOpenOL2 = window.openOL2;
+
+    // Ghi đè để tối ưu
+    window.openOL2 = async function(productId) {
+        try {
+            // Hiển thị loading ngay lập tức
+            const overlay = document.getElementById('ol2');
+            const body = document.getElementById('ol2-body');
+            if (overlay && body) {
+                body.innerHTML = `
+                    <div class="flex items-center justify-center py-16">
+                        <div class="sp w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span class="ml-3 text-sm font-medium text-slate-500">Đang tải sản phẩm...</span>
+                    </div>
+                `;
+                overlay.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            // Gọi hàm gốc để lấy dữ liệu
+            if (typeof _origOpenOL2 === 'function') {
+                await _origOpenOL2(productId);
+            }
+
+            // Tối ưu sau khi render xong
+            setTimeout(() => {
+                // Tối ưu ảnh trong overlay
+                document.querySelectorAll('#ol2-body img').forEach(img => {
+                    // Lazy loading cho ảnh (nếu chưa có)
+                    if (!img.hasAttribute('loading')) {
+                        img.setAttribute('loading', 'lazy');
+                    }
+                    // Giảm kích thước ảnh trên mobile
+                    if (window.innerWidth < 768) {
+                        const src = img.src;
+                        if (src && !src.includes('?w=')) {
+                            img.src = src + '?w=400&h=300&fit=cover';
+                        }
+                    }
+                });
+
+                // Tối ưu nút mua (giảm hiệu ứng)
+                const buyBtn = document.querySelector('#ol2-body .bg-blue-700');
+                if (buyBtn) {
+                    buyBtn.style.transition = 'none';
+                    buyBtn.addEventListener('mouseenter', function() {
+                        this.style.transform = 'none';
+                    });
+                    buyBtn.addEventListener('mouseleave', function() {
+                        this.style.transform = 'none';
+                    });
+                }
+
+                // Giảm số lượng ảnh gallery hiển thị cùng lúc
+                const galleryImgs = document.querySelectorAll('#ol2-body .rv-c');
+                if (galleryImgs.length > 3) {
+                    galleryImgs.forEach((img, idx) => {
+                        if (idx > 2) img.style.display = 'none';
+                    });
+                }
+
+                console.log('✅ Đã tối ưu overlay LP2');
+            }, 200);
+
+        } catch (e) {
+            console.error('❌ Lỗi openOL2:', e);
+            toast('Không thể tải sản phẩm. Vui lòng thử lại.', 'error');
+        }
+    };
+
+    // Tối ưu closeOL2
+    const _origCloseOL2 = window.closeOL2;
+    window.closeOL2 = function() {
+        if (typeof _origCloseOL2 === 'function') {
+            _origCloseOL2();
+        }
+        // Dọn dẹp sau khi đóng
+        setTimeout(() => {
+            const body = document.getElementById('ol2-body');
+            if (body) {
+                // Giữ lại nội dung nhưng xóa ảnh không cần thiết
+                body.querySelectorAll('img').forEach(img => {
+                    if (!img.closest('.rv-c') && !img.closest('.relative')) {
+                        img.remove();
+                    }
+                });
+            }
+        }, 100);
+    };
+
+    // ================================================================
+    // 3. TỐI ƯU HIỆU ỨNG KHI CUỘN (giảm lag khi scroll)
+    // ================================================================
+
+    // Sử dụng IntersectionObserver để lazy-load ảnh
+    function lazyLoadImages() {
+        const images = document.querySelectorAll('img[data-src]');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.removeAttribute('data-src');
+                    observer.unobserve(img);
+                }
+            });
+        }, {
+            rootMargin: '50px 0px',
+            threshold: 0.01
+        });
+        images.forEach(img => observer.observe(img));
+        console.log('✅ Đã áp dụng lazy-load cho ảnh');
+    }
+
+    // Chạy sau khi DOM load
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(lazyLoadImages, 500);
+    });
+
+    // ================================================================
+    // 4. TỐI ƯU THÊM: Hạn chế repaint trên overlay
+    // ================================================================
+
+    // Khi mở overlay, tạm thời tắt hiệu ứng của các phần tử khác
+    const _origOverlayOpen = document.getElementById('ol2')?.classList.add;
+    if (_origOverlayOpen) {
+        const overlayEl = document.getElementById('ol2');
+        const origAdd = overlayEl.classList.add.bind(overlayEl.classList);
+        overlayEl.classList.add = function(className) {
+            if (className === 'open') {
+                // Tắt animation trên các card khác
+                document.querySelectorAll('.pcard, .ccard, .fs-card').forEach(el => {
+                    el.style.transition = 'none';
+                });
+                // Giảm blur trên background
+                document.querySelectorAll('.modal-overlay, #popup-notif').forEach(el => {
+                    el.style.backdropFilter = 'blur(4px)';
+                    el.style.webkitBackdropFilter = 'blur(4px)';
+                });
+                console.log('🎯 Tối ưu overlay: tạm thời tắt hiệu ứng khác');
+            }
+            return origAdd(className);
+        };
+    }
+
+    console.log('✅ Đã áp dụng tất cả fix lag!');
+})();
 
 
     </script>                            

@@ -5601,6 +5601,100 @@ window.showSub2 = function(id) {
 
     console.log('✅ Giải pháp triệt để đã áp dụng! Không còn lỗi ảnh và lag giảm đáng kể.');
 })();
+        // ================================================================
+// ===== TỐI ƯU ĐÓNG SẢN PHẨM (GIẢM LAG KHI ĐÓNG OL2) =====
+// ================================================================
+
+(function() {
+    console.log('🔥 Đang tối ưu đóng sản phẩm...');
+
+    // Lưu hàm closeOL2 gốc
+    const _origCloseOL2 = window.closeOL2;
+    if (typeof _origCloseOL2 === 'function') {
+        window.closeOL2 = function() {
+            try {
+                // Lấy sheet và overlay
+                const sheet = document.getElementById('ol2-sheet');
+                const overlay = document.getElementById('ol2');
+                
+                if (!sheet || !overlay) {
+                    if (typeof _origCloseOL2 === 'function') _origCloseOL2();
+                    return;
+                }
+
+                // 1. Ngay lập tức ngừng mọi animation để không bị giật
+                sheet.style.animation = 'none';
+                sheet.style.transition = 'none';
+                
+                // 2. Ẩn nội dung ngay để giảm tải render
+                const body = document.getElementById('ol2-body');
+                if (body) {
+                    body.style.display = 'none';
+                }
+
+                // 3. Đóng overlay (xóa class open)
+                overlay.classList.remove('open');
+                
+                // 4. Dọn dẹp sheet sau 150ms (thay vì 300ms)
+                setTimeout(() => {
+                    sheet.style.animation = '';
+                    sheet.style.transition = '';
+                    if (body) {
+                        body.style.display = '';
+                        // Xóa nội dung cũ để giải phóng bộ nhớ
+                        body.innerHTML = '';
+                    }
+                    // Gọi hàm gốc nếu cần (để reset state)
+                    if (typeof _origCloseOL2 === 'function') {
+                        // Không gọi lại để tránh trùng
+                    }
+                    console.log('✅ Đã đóng và dọn dẹp bảng sản phẩm');
+                }, 150);
+
+            } catch (e) {
+                console.error('❌ Lỗi đóng sản phẩm:', e);
+                // Fallback: gọi hàm gốc
+                if (typeof _origCloseOL2 === 'function') _origCloseOL2();
+            }
+        };
+        console.log('✅ Đã ghi đè closeOL2 để đóng nhanh hơn');
+    }
+
+    // Tối ưu animation đóng (sheetDown) - rút ngắn thời gian
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+        #ol2-sheet.closing {
+            animation-duration: 0.15s !important;
+            transition: transform 0.15s ease !important;
+        }
+        #ol2-sheet {
+            transition: transform 0.15s ease !important;
+        }
+        /* Giảm thời gian animation overlay */
+        .modal-overlay.closing {
+            animation-duration: 0.15s !important;
+        }
+    `;
+    document.head.appendChild(styleSheet);
+    console.log('✅ Đã rút ngắn animation đóng xuống 0.15s');
+
+    // Tối ưu thêm: loại bỏ các sự kiện không cần thiết khi đóng
+    document.addEventListener('click', function(e) {
+        // Nếu click ra ngoài sheet để đóng
+        const overlay = document.getElementById('ol2');
+        if (overlay && overlay.classList.contains('open')) {
+            const sheet = document.getElementById('ol2-sheet');
+            if (sheet && !sheet.contains(e.target) && e.target === overlay) {
+                // Đóng nhanh
+                if (typeof window.closeOL2 === 'function') {
+                    window.closeOL2();
+                }
+            }
+        }
+    });
+
+    console.log('✅ Tối ưu đóng sản phẩm hoàn tất!');
+})();
 
 
     </script>                            
